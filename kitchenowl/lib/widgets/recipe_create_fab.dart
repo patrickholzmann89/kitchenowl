@@ -5,6 +5,7 @@ import 'package:kitchenowl/cubits/recipe_list_cubit.dart';
 import 'package:kitchenowl/enums/update_enum.dart';
 import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/pages/recipe_add_update_page.dart';
+import 'package:kitchenowl/widgets/select_file.dart';
 
 class RecipeCreateFab extends StatelessWidget {
   final _fabKey = GlobalKey<ExpandableFabState>();
@@ -64,6 +65,27 @@ class RecipeCreateFab extends StatelessWidget {
             }
           },
           child: const Icon(Icons.link_rounded),
+        ),
+        FloatingActionButton(
+          heroTag: null,
+          onPressed: () async {
+            final file = await selectPdfFile();
+            if (file == null) return;
+
+            final res = await context.push(
+              Uri(
+                path:
+                    "/household/${BlocProvider.of<RecipeListCubit>(context).household.id}/recipes/scrape-pdf",
+              ).toString(),
+              extra: file,
+            );
+
+            _fabKey.currentState?.reset();
+            if (res == UpdateEnum.updated) {
+              BlocProvider.of<RecipeListCubit>(context).refresh();
+            }
+          },
+          child: const Icon(Icons.picture_as_pdf_rounded),
         ),
       ],
     );

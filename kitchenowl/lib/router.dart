@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kitchenowl/cubits/auth_cubit.dart';
 import 'package:kitchenowl/enums/expenselist_sorting.dart';
 import 'package:kitchenowl/helpers/fade_through_transition_page.dart';
+import 'package:kitchenowl/helpers/named_bytearray.dart';
 import 'package:kitchenowl/helpers/shared_axis_transition_page.dart';
 import 'package:kitchenowl/models/expense.dart';
 import 'package:kitchenowl/models/household.dart';
@@ -24,6 +25,7 @@ import 'package:kitchenowl/pages/password_forgot_page.dart';
 import 'package:kitchenowl/pages/password_reset_page.dart';
 import 'package:kitchenowl/pages/recipe_discover_page.dart';
 import 'package:kitchenowl/pages/recipe_page.dart';
+import 'package:kitchenowl/pages/recipe_pdf_scraper_page.dart';
 import 'package:kitchenowl/pages/recipe_scraper_page.dart';
 import 'package:kitchenowl/pages/settings_page.dart';
 import 'package:kitchenowl/pages/settings_user_page.dart';
@@ -313,6 +315,16 @@ final router = GoRouter(
                   path: 'scrape',
                   builder: (context, state) => RecipeScraperPage(
                     url: state.uri.queryParameters['url']!,
+                    household: Household(
+                      id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                    ),
+                  ),
+                ),
+                GoRoute(
+                  parentNavigatorKey: _rootNavigatorKey,
+                  path: 'scrape-pdf',
+                  builder: (context, state) => RecipePdfScraperPage(
+                    file: state.extra as NamedByteArray,
                     household: Household(
                       id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
                     ),

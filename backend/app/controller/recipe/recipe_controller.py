@@ -3,7 +3,7 @@ from sqlalchemy import desc, func
 from app.config import FRONT_URL
 from app.errors import NotFoundRequest
 from app.models import Household, RecipeItems, RecipeTags
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, request
 from flask_jwt_extended import current_user, jwt_required
 from app import db
 from app.helpers import validate_args, authorize_household
@@ -11,6 +11,7 @@ from app.models import Recipe, Item, Tag
 from app.models.recipe import RecipeVisibility
 from app.service.file_has_access_or_download import file_has_access_or_download
 from app.service.recipe_scraping import scrape
+from app.service.recipe_pdf_import import extractPdfText, extractRecipeFromText
 from .schemas import (
     SearchByNameRequest,
     AddRecipe,
@@ -249,6 +250,27 @@ def scrapeRecipe(args, household_id):
     if res:
         return jsonify(res)
     return "Unsupported website", 400
+
+
+@recipeHousehold.route("/scrape/pdf", methods=["POST"])
+@jwt_required()
+@authorize_household()
+def scrapeRecipePdf(household_id):
+    household = Household.find_by_id(household_id)
+    if not household:
+        raise NotFoundRequest()
+
+    if "file" not in request.files:
+        return "Missing file", 400
+    file = request.files["file"]
+    if not file.filename or file.filename.rsplit(".", 1)[-1].lower() != "pdf":
+        return "Unsupported PDF", 400
+
+    text = extractPdfText(file.stream)
+    res = extractRecipeFromText(text, household) if text else None
+    if res:
+        return jsonify(res)
+    return "Unsupported PDF", 400
 
 
 @recipe.route("/discover", methods=["GET"])

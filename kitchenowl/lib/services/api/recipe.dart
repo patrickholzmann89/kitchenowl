@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:kitchenowl/helpers/named_bytearray.dart';
 import 'package:kitchenowl/models/household.dart';
 import 'package:kitchenowl/models/recipe.dart';
 import 'package:kitchenowl/models/recipe_scrape.dart';
@@ -104,6 +105,22 @@ extension RecipeApi on ApiService {
     final res = await post(
       '${householdPath(household)}$baseRoute/scrape',
       jsonEncode({'url': url}),
+      timeout: _TIMEOUT_SCRAPE,
+    );
+    if (res.statusCode != 200) return (null, res.statusCode);
+
+    final body = jsonDecode(res.body);
+
+    return (RecipeScrape.fromJson(body), 200);
+  }
+
+  Future<(RecipeScrape?, int)> scrapeRecipePdf(
+    Household household,
+    NamedByteArray file,
+  ) async {
+    final res = await postBytes(
+      '${householdPath(household)}$baseRoute/scrape/pdf',
+      file,
       timeout: _TIMEOUT_SCRAPE,
     );
     if (res.statusCode != 200) return (null, res.statusCode);

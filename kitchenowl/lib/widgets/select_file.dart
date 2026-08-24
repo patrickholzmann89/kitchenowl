@@ -86,3 +86,16 @@ Future<NamedByteArray?> selectFile({
 
   return null;
 }
+
+Future<NamedByteArray?> selectPdfFile() async {
+  final FilePickerResult? result = await FilePicker.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['pdf'],
+    withData: true,
+  );
+  if (result != null && result.files.first.name.isNotEmpty) {
+    return NamedByteArray(result.files.first.name, result.files.first.bytes!);
+  }
+
+  return null;
+}
