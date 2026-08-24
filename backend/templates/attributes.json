@@ -12,6 +12,10 @@
       "category": "drinks",
       "icon": "wine_bottle"
     },
+    "appenzeller": {
+      "category": "dairy",
+      "icon": "cheese"
+    },
     "apple": {
       "category": "fruits_vegetables",
       "icon": "apple"
@@ -147,6 +151,10 @@
       "category": "fruits_vegetables",
       "icon": "beet"
     },
+    "bierschinken": {
+      "category": "refrigerated",
+      "icon": "sausage"
+    },
     "birthday_card": {
       "category": "hygiene",
       "icon": "paper"
@@ -159,6 +167,14 @@
       "category": "hygiene",
       "icon": "bandage"
     },
+    "blood_sausage": {
+      "category": "refrigerated",
+      "icon": "sausage"
+    },
+    "blue_cheese": {
+      "category": "dairy",
+      "icon": "cheese"
+    },
     "bockwurst": {
       "category": "refrigerated",
       "icon": "sausage"
@@ -167,6 +183,10 @@
       "category": "hygiene",
       "icon": "shampoo"
     },
+    "bratwurst": {
+      "category": "refrigerated",
+      "icon": "sausage"
+    },
     "bread": {
       "category": "bread",
       "icon": "bread"
@@ -174,6 +194,10 @@
     "breadcrumbs": {
       "category": "bread",
       "icon": "bread"
+    },
+    "brie": {
+      "category": "dairy",
+      "icon": "cheese"
     },
     "broccoli": {
       "category": "fruits_vegetables",
@@ -209,6 +233,10 @@
     "butter": {
       "category": "dairy",
       "icon": "butter"
+    },
+    "butter_cheese": {
+      "category": "dairy",
+      "icon": "cheese"
     },
     "butter_cookies": {
       "category": "snacks",
@@ -467,6 +495,10 @@
       "category": "dairy",
       "icon": "flour"
     },
+    "cottage_cheese": {
+      "category": "dairy",
+      "icon": "cheese"
+    },
     "cotton_pads": {
       "category": "hygiene",
       "icon": "wipes"
@@ -543,6 +575,10 @@
       "category": "canned",
       "icon": "ketchup"
     },
+    "currywurst": {
+      "category": "refrigerated",
+      "icon": "sausage"
+    },
     "dark_bread": {
       "icon": "bread"
     },
@@ -601,6 +637,10 @@
       "icon": "lentil"
     },
     "ear_swabs": {},
+    "edam": {
+      "category": "dairy",
+      "icon": "cheese"
+    },
     "edamame": {
       "category": "freezer",
       "icon": "peas"
@@ -629,6 +669,10 @@
       "icon": "mushroom"
     },
     "escalope": {},
+    "extrawurst": {
+      "category": "refrigerated",
+      "icon": "sausage"
+    },
     "eyebrow_gel": {
       "category": "hygiene",
       "icon": "eyelash"
@@ -666,12 +710,20 @@
       "category": "bread",
       "icon": "bread_loaf"
     },
+    "fleischwurst": {
+      "category": "refrigerated",
+      "icon": "sausage"
+    },
     "flour": {
       "category": "dairy",
       "icon": "flour"
     },
     "focaccia": {},
     "food_coloring": {},
+    "frankfurter": {
+      "category": "refrigerated",
+      "icon": "hot_dog"
+    },
     "fresh_chili_pepper": {
       "category": "fruits_vegetables",
       "icon": "chili_pepper"
@@ -827,6 +879,10 @@
       "category": "hygiene",
       "icon": "scrunchy"
     },
+    "halloumi": {
+      "category": "dairy",
+      "icon": "cheese"
+    },
     "ham": {
       "category": "refrigerated",
       "icon": "jamon"
@@ -858,6 +914,10 @@
     "harissa": {
       "category": "canned",
       "icon": "chili_pepper"
+    },
+    "harzer_cheese": {
+      "category": "dairy",
+      "icon": "cheese"
     },
     "hazelnut_cookies": {
       "icon": "cookies"
@@ -923,6 +983,10 @@
       "icon": "noodles"
     },
     "italian_herbs": {},
+    "jagdwurst": {
+      "category": "refrigerated",
+      "icon": "sausage"
+    },
     "jalapenos": {},
     "jam": {
       "category": "canned",
@@ -933,6 +997,10 @@
       "icon": "grains_of_rice"
     },
     "juice": {},
+    "kabanossi": {
+      "category": "refrigerated",
+      "icon": "salami"
+    },
     "kale": {
       "icon": "cabbage"
     },
@@ -965,6 +1033,14 @@
     "kohlrabi": {
       "category": "fruits_vegetables",
       "icon": "kohlrabi"
+    },
+    "krakauer": {
+      "category": "refrigerated",
+      "icon": "sausage"
+    },
+    "landjaeger": {
+      "category": "refrigerated",
+      "icon": "sausage"
     },
     "lasagna": {
       "category": "grain",
@@ -1041,10 +1117,18 @@
       "category": "drinks",
       "icon": "vodka"
     },
+    "liver_sausage": {
+      "category": "refrigerated",
+      "icon": "jam"
+    },
     "lobster": {},
     "low-fat_curd_cheese": {
       "category": "dairy",
       "icon": "yogurt"
+    },
+    "lyoner": {
+      "category": "refrigerated",
+      "icon": "sausage"
     },
     "macaroni": {
       "icon": "pasta"
@@ -1104,6 +1188,10 @@
     },
     "melon": {
       "icon": "melon"
+    },
+    "mettwurst": {
+      "category": "refrigerated",
+      "icon": "sausage"
     },
     "microfiber_cloth": {
       "category": "hygiene",
@@ -1456,6 +1544,10 @@
       "category": "drinks",
       "icon": "champagne_bottle"
     },
+    "provolone": {
+      "category": "dairy",
+      "icon": "cheese"
+    },
     "prune": {
       "icon": "plum"
     },
@@ -1735,6 +1827,10 @@
       "category": "dairy",
       "icon": "cheese"
     },
+    "smoked_cheese": {
+      "category": "dairy",
+      "icon": "cheese"
+    },
     "smoked_paprika": {
       "category": "canned",
       "icon": "paprika"
@@ -1928,6 +2024,10 @@
       "category": "drinks",
       "icon": "tea"
     },
+    "teewurst": {
+      "category": "refrigerated",
+      "icon": "jam"
+    },
     "teriyaki_sauce": {
       "category": "canned",
       "icon": "soy_sauce"
@@ -1935,6 +2035,10 @@
     "thyme": {
       "category": "fruits_vegetables",
       "icon": "basil"
+    },
+    "tilsiter": {
+      "category": "dairy",
+      "icon": "cheese"
     },
     "toast": {
       "category": "bread",
@@ -2037,6 +2141,10 @@
       "category": "refrigerated",
       "icon": "salami"
     },
+    "vienna_sausage": {
+      "category": "refrigerated",
+      "icon": "hot_dog"
+    },
     "vinegar": {
       "category": "canned",
       "icon": "rice_vinegar"
@@ -2078,6 +2186,10 @@
     "wc_cleaner": {
       "category": "hygiene",
       "icon": "spray"
+    },
+    "weisswurst": {
+      "category": "refrigerated",
+      "icon": "sausage"
     },
     "wheat": {},
     "wheat_flour": {

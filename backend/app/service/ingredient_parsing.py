@@ -4,6 +4,7 @@ import ingredient_parser.dataclasses
 from litellm import completion
 import json
 import os
+import re
 
 from app.config import SUPPORTED_LANGUAGES
 
@@ -47,6 +48,123 @@ def parseNLP(ingredients: list[str]) -> list[IngredientParsingResult]:
         return IngredientParsingResult(ingredient, name, description)
 
     return [parseNLPSingle(e) for e in ingredients]
+
+
+# ingredient-parser-nlp is trained on English recipe text only, so it does not
+# recognise German quantities/units. This lightweight rule-based fallback is
+# used for German households instead, when no LLM is configured.
+_GERMAN_NUMBER_WORDS = {
+    "ein": "1",
+    "eine": "1",
+    "einen": "1",
+    "einem": "1",
+    "einer": "1",
+    "zwei": "2",
+    "drei": "3",
+    "vier": "4",
+    "fünf": "5",
+    "sechs": "6",
+    "sieben": "7",
+    "acht": "8",
+    "neun": "9",
+    "zehn": "10",
+    "elf": "11",
+    "zwölf": "12",
+}
+
+_GERMAN_UNIT_WORDS = [
+    "kilogramm",
+    "gramm",
+    "milliliter",
+    "esslöffel",
+    "teelöffel",
+    "messerspitze",
+    "handvoll",
+    "packungen",
+    "packung",
+    "scheiben",
+    "scheibe",
+    "bündel",
+    "bund",
+    "zehen",
+    "zehe",
+    "dosen",
+    "dose",
+    "gläser",
+    "glas",
+    "tassen",
+    "tasse",
+    "würfel",
+    "prisen",
+    "prise",
+    "stück",
+    "kg",
+    "g",
+    "ml",
+    "l",
+    "el",
+    "tl",
+    "msp",
+    "pkg",
+    "pck",
+    "stk",
+]
+# Longest first so e.g. "esslöffel" matches before a shorter, unrelated prefix would.
+_GERMAN_UNIT_WORDS.sort(key=len, reverse=True)
+
+# Trailing \b keeps these from matching as a prefix of an unrelated word, e.g.
+# the "ein" in "Eintopf" or the "g" in "Gurke" — since the input is otherwise
+# unspaced ("300g"), only a trailing boundary is enforced, not a leading one.
+_GERMAN_NUMBER_PATTERN = (
+    r"\d+\s*/\s*\d+"
+    r"|\d+[.,]?\d*(?:\s*[-–]\s*\d+[.,]?\d*)?"
+    r"|[¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]"
+    r"|(?:" + "|".join(_GERMAN_NUMBER_WORDS.keys()) + r")\b"
+)
+_GERMAN_UNIT_PATTERN = (
+    "(?:" + "|".join(re.escape(unit) for unit in _GERMAN_UNIT_WORDS) + r")\b"
+)
+
+_GERMAN_INGREDIENT_RE = re.compile(
+    rf"^\s*(?P<qty>{_GERMAN_NUMBER_PATTERN})?"
+    rf"\s*(?P<unit>{_GERMAN_UNIT_PATTERN})?\.?"
+    rf"\s*(?P<rest>.*)$",
+    re.IGNORECASE,
+)
+_PARENTHETICAL_RE = re.compile(r"\(([^)]*)\)")
+
+
+def parseGerman(ingredients: list[str]) -> list[IngredientParsingResult]:
+    def parseGermanSingle(ingredient: str) -> IngredientParsingResult:
+        text = ingredient.strip()
+        notes = [n.strip() for n in _PARENTHETICAL_RE.findall(text) if n.strip()]
+        text_without_parens = _PARENTHETICAL_RE.sub(" ", text).strip()
+
+        match = _GERMAN_INGREDIENT_RE.match(text_without_parens)
+        qty = match.group("qty").strip() if match and match.group("qty") else None
+        unit = match.group("unit").strip() if match and match.group("unit") else None
+        rest = match.group("rest").strip() if match else text_without_parens
+
+        if qty and qty.lower() in _GERMAN_NUMBER_WORDS:
+            qty = _GERMAN_NUMBER_WORDS[qty.lower()]
+
+        # Anything after the first comma is a preparation note (e.g. "gehackt"),
+        # not part of the ingredient name.
+        name = rest.split(",")[0].strip(" .-") or text_without_parens
+
+        description = " ".join(filter(None, [qty, unit, *notes]))
+
+        return IngredientParsingResult(ingredient, name, description)
+
+    return [parseGermanSingle(e) for e in ingredients]
+
+
+def parseFallback(
+    ingredients: list[str], targetLanguageCode: str | None = None
+) -> list[IngredientParsingResult]:
+    if targetLanguageCode and targetLanguageCode.startswith("de"):
+        return parseGerman(ingredients)
+    return parseNLP(ingredients)
 
 
 def parseLLM(
@@ -112,7 +230,9 @@ def parseIngredients(
 ) -> list[IngredientParsingResult]:
     if LLM_MODEL:
         try:
-            return parseLLM(ingredients, targetLanguageCode) or parseNLP(ingredients)
+            return parseLLM(ingredients, targetLanguageCode) or parseFallback(
+                ingredients, targetLanguageCode
+            )
         except Exception as e:
             print("Error parsing ingredients:", e)
-    return parseNLP(ingredients)
+    return parseFallback(ingredients, targetLanguageCode)
