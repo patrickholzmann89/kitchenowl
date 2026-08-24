@@ -95,8 +95,38 @@ _INSTRUCTION_HEADERS = {
     "zubereitung",
     "anleitung",
 }
+# Headers that mark the start of a section following the instructions (e.g.
+# in an LLM-generated recipe card) - used to stop the instructions block from
+# swallowing everything up to the end of the pasted text.
+_INSTRUCTION_END_HEADERS = {
+    "anrichten",
+    "servieren",
+    "serving",
+    "presentation",
+    "nährwerte",
+    "naehrwerte",
+    "nutrition",
+    "nutritionalvalues",
+    "tipps",
+    "tippsvarianten",
+    "tips",
+    "tipsvariations",
+    "aufbewahrung",
+    "storage",
+}
 _NUMBERED_MARKER_RE = re.compile(r"^\d+[.)]\s*")
-_YIELDS_RE = re.compile(r"(\d+)\s*(?:servings?|portionen|personen)", re.IGNORECASE)
+# Accepts the count before or after the unit ("4 Portionen" or "Portionen: 4").
+_YIELDS_RE = re.compile(
+    r"(?:(?P<n1>\d+)\s*(?:servings?|portionen|personen))"
+    r"|(?:(?:servings?|portionen|personen)\D{0,5}(?P<n2>\d+))",
+    re.IGNORECASE,
+)
+# Matches "<Label>: 15 Minuten" style time fields, in minutes.
+_TIME_FIELD_PATTERNS = {
+    "prep_time": re.compile(r"vorbereitung(?:szeit)?\D{0,10}(\d+)\s*min", re.IGNORECASE),
+    "cook_time": re.compile(r"(?:koch|gar)(?:zeit)?\D{0,10}(\d+)\s*min", re.IGNORECASE),
+    "time": re.compile(r"gesamtzeit\D{0,10}(\d+)\s*min", re.IGNORECASE),
+}
 
 
 def _normalizeHeader(line: str) -> str:
@@ -191,22 +221,32 @@ def parseRecipeStructureFallback(
                 searchStart + guessedEnd if guessedEnd is not None else None
             )
 
-    instructions = (
-        "\n".join(line.strip() for line in lines[instructionsIdx + 1 :] if line.strip())
-        if instructionsIdx is not None
-        else ""
-    )
+    instructions = ""
+    if instructionsIdx is not None:
+        body = lines[instructionsIdx + 1 :]
+        endIdx = _findHeaderIndex(body, _INSTRUCTION_END_HEADERS)
+        if endIdx is not None:
+            body = body[:endIdx]
+        instructions = "\n".join(line.strip() for line in body if line.strip())
 
     yieldsMatch = _YIELDS_RE.search(text)
+
+    def timeMinutes(field: str) -> int | None:
+        match = _TIME_FIELD_PATTERNS[field].search(text)
+        return int(match.group(1)) if match else None
 
     return {
         "name": name,
         "ingredients": ingredients,
         "instructions": instructions,
-        "yields": int(yieldsMatch.group(1)) if yieldsMatch else None,
-        "time": None,
-        "prep_time": None,
-        "cook_time": None,
+        "yields": (
+            int(yieldsMatch.group("n1") or yieldsMatch.group("n2"))
+            if yieldsMatch
+            else None
+        ),
+        "time": timeMinutes("time"),
+        "prep_time": timeMinutes("prep_time"),
+        "cook_time": timeMinutes("cook_time"),
     }
 
 
