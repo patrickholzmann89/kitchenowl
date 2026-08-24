@@ -19,6 +19,7 @@ from .schemas import (
     UpdateRecipe,
     GetAllFilterRequest,
     ScrapeRecipe,
+    ScrapeRecipeText,
     SuggestionsRecipe,
 )
 
@@ -271,6 +272,21 @@ def scrapeRecipePdf(household_id):
     if res:
         return jsonify(res)
     return "Unsupported PDF", 400
+
+
+@recipeHousehold.route("/scrape/text", methods=["POST"])
+@jwt_required()
+@authorize_household()
+@validate_args(ScrapeRecipeText)
+def scrapeRecipeText(args, household_id):
+    household = Household.find_by_id(household_id)
+    if not household:
+        raise NotFoundRequest()
+
+    res = extractRecipeFromText(args["text"], household)
+    if res:
+        return jsonify(res)
+    return "Unsupported text", 400
 
 
 @recipe.route("/discover", methods=["GET"])

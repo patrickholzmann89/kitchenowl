@@ -87,6 +87,39 @@ class RecipeCreateFab extends StatelessWidget {
           },
           child: const Icon(Icons.picture_as_pdf),
         ),
+        FloatingActionButton(
+          heroTag: null,
+          onPressed: () async {
+            final text = await showDialog<String>(
+              context: context,
+              builder: (BuildContext context) {
+                return TextDialog(
+                  title: AppLocalizations.of(context)!.recipeAddText,
+                  doneText: AppLocalizations.of(context)!.add,
+                  hintText: AppLocalizations.of(context)!.recipeAddTextHint,
+                  isInputValid: (s) => s.trim().isNotEmpty,
+                  minLines: 8,
+                  maxLines: null,
+                );
+              },
+            );
+            if (text == null) return;
+
+            final res = await context.push(
+              Uri(
+                path:
+                    "/household/${BlocProvider.of<RecipeListCubit>(context).household.id}/recipes/scrape-text",
+              ).toString(),
+              extra: text,
+            );
+
+            _fabKey.currentState?.reset();
+            if (res == UpdateEnum.updated) {
+              BlocProvider.of<RecipeListCubit>(context).refresh();
+            }
+          },
+          child: const Icon(Icons.text_snippet),
+        ),
       ],
     );
   }

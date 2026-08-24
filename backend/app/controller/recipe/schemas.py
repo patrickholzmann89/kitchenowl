@@ -81,5 +81,9 @@ class ScrapeRecipe(Schema):
     url = fields.String(required=True, validate=lambda a: a and not a.isspace())
 
 
+class ScrapeRecipeText(Schema):
+    text = fields.String(required=True, validate=lambda a: a and not a.isspace())
+
+
 class SuggestionsRecipe(Schema):
     language = fields.String()

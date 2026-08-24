@@ -9,6 +9,8 @@ class TextDialog extends StatefulWidget {
   final void Function(String)? onDone;
   final String? initialText;
   final List<Widget>? actions;
+  final int minLines;
+  final int? maxLines;
 
   const TextDialog({
     super.key,
@@ -20,6 +22,8 @@ class TextDialog extends StatefulWidget {
     this.isInputValid,
     this.actions,
     this.onDone,
+    this.minLines = 1,
+    this.maxLines = 1,
   });
 
   @override
@@ -64,12 +68,16 @@ class _TextDialogState extends State<TextDialog> {
                   });
                 }
               },
-              onSubmitted: (t) {
-                if (validText) Navigator.of(context).pop(t);
-              },
+              onSubmitted: widget.maxLines == 1
+                  ? (t) {
+                      if (validText) Navigator.of(context).pop(t);
+                    }
+                  : null,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(hintText: widget.hintText),
               keyboardType: widget.textInputType,
+              minLines: widget.minLines,
+              maxLines: widget.maxLines,
             ),
           ],
         ),

@@ -114,6 +114,20 @@ extension RecipeApi on ApiService {
     return (RecipeScrape.fromJson(body), 200);
   }
 
+  Future<(RecipeScrape?, int)> scrapeRecipeText(
+      Household household, String text) async {
+    final res = await post(
+      '${householdPath(household)}$baseRoute/scrape/text',
+      jsonEncode({'text': text}),
+      timeout: _TIMEOUT_SCRAPE,
+    );
+    if (res.statusCode != 200) return (null, res.statusCode);
+
+    final body = jsonDecode(res.body);
+
+    return (RecipeScrape.fromJson(body), 200);
+  }
+
   Future<(RecipeScrape?, int)> scrapeRecipePdf(
     Household household,
     NamedByteArray file,

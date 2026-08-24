@@ -346,6 +346,8 @@
     }
   },
   "@recipeAddUrl": {},
+  "@recipeAddText": {},
+  "@recipeAddTextHint": {},
   "@recipeDelete": {},
   "@recipeDeleteConfirmation": {
     "placeholders": {
@@ -704,6 +706,8 @@
   "recipeAdd": "Add recipe",
   "recipeAddToHousehold": "Add to {householdName}",
   "recipeAddUrl": "Add recipe from URL",
+  "recipeAddText": "Add recipe from text",
+  "recipeAddTextHint": "Paste the recipe text here...",
   "recipeDelete": "Delete recipe",
   "recipeDeleteConfirmation": "Are you sure you want to remove {recipe}?",
   "recipeEdit": "Edit recipe",

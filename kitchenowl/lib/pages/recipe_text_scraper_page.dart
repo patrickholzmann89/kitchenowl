@@ -1,0 +1,271 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:kitchenowl/app.dart';
+import 'package:kitchenowl/cubits/household_cubit.dart';
+import 'package:kitchenowl/cubits/recipe_scraper_cubit.dart';
+import 'package:kitchenowl/cubits/recipe_text_scraper_cubit.dart';
+import 'package:kitchenowl/enums/update_enum.dart';
+import 'package:kitchenowl/helpers/url_launcher.dart';
+import 'package:kitchenowl/kitchenowl.dart';
+import 'package:kitchenowl/models/household.dart';
+import 'package:kitchenowl/pages/recipe_add_update_page.dart';
+import 'package:kitchenowl/styles/color_mapper.dart';
+import 'package:kitchenowl/widgets/string_item_match.dart';
+
+class RecipeTextScraperPage extends StatefulWidget {
+  final String text;
+  final Household household;
+
+  const RecipeTextScraperPage({
+    super.key,
+    required this.text,
+    required this.household,
+  });
+
+  @override
+  _RecipeTextScraperPageState createState() => _RecipeTextScraperPageState();
+}
+
+class _RecipeTextScraperPageState extends State<RecipeTextScraperPage> {
+  late RecipeTextScraperCubit cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    cubit = RecipeTextScraperCubit(widget.household, widget.text);
+  }
+
+  @override
+  void dispose() {
+    cubit.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => HouseholdCubit(widget.household),
+      child: BlocProvider.value(
+        value: cubit,
+        child: BlocBuilder<RecipeTextScraperCubit, RecipeScraperState>(
+          bloc: cubit,
+          builder: (context, state) {
+            if (state is! RecipeScraperLoadedState) {
+              late final Widget body;
+              if (state is RecipeScraperErrorState) {
+                body = Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 60,
+                          vertical: 25,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 300),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: SvgPicture(
+                              SvgAssetLoader(
+                                "assets/illustrations/right_direction.svg",
+                                colorMapper: KitchenOwlColorMapper(
+                                  accentColor:
+                                      Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              fit: BoxFit.scaleDown,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        AppLocalizations.of(context)!.error,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      if (!App.isDefaultServer)
+                        ElevatedButton(
+                          onPressed: () => openUrl(
+                            context,
+                            "https://github.com/TomBursch/kitchenowl/issues/new/choose",
+                          ),
+                          child:
+                              Text(AppLocalizations.of(context)!.reportIssue),
+                        )
+                    ],
+                  ),
+                );
+              } else if (state is RecipeScraperUnsupportedState) {
+                body = Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 60,
+                          vertical: 25,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 300),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: SvgPicture(
+                              SvgAssetLoader(
+                                "assets/illustrations/under_construction.svg",
+                                colorMapper: KitchenOwlColorMapper(
+                                  accentColor:
+                                      Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              fit: BoxFit.scaleDown,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        AppLocalizations.of(context)!.unsupportedScrapeMessage,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ],
+                  ),
+                );
+              } else if (state is RecipeScraperForbiddenState) {
+                body = Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 60,
+                          vertical: 25,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 300),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: SvgPicture(
+                              SvgAssetLoader(
+                                "assets/illustrations/right_direction.svg",
+                                colorMapper: KitchenOwlColorMapper(
+                                  accentColor:
+                                      Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              fit: BoxFit.scaleDown,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        AppLocalizations.of(context)!.privateRecipeDescription,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                body = Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      const SizedBox(height: 32),
+                      Text(
+                        AppLocalizations.of(context)!.analysingWebsite,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return Scaffold(
+                appBar: AppBar(
+                  title: Text(AppLocalizations.of(context)!.recipeAddText),
+                ),
+                body: body,
+              );
+            }
+
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(state.recipe.name),
+              ),
+              body: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints.expand(width: 1600),
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: SliverToBoxAdapter(
+                          child: Wrap(
+                            children: state.items.entries.map(
+                              (entry) {
+                                return StringItemMatch(
+                                  household: widget.household,
+                                  string: entry.key,
+                                  item: entry.value,
+                                  itemSelected: (item) {
+                                    cubit.updateItem(entry.key, item);
+                                  },
+                                );
+                              },
+                            ).toList(),
+                          ),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: ElevatedButton(
+                            onPressed: state.isValid()
+                                ? () async {
+                                    if (!cubit.hasValidRecipe()) return;
+                                    final res = await Navigator.of(context)
+                                        .push<UpdateEnum>(MaterialPageRoute(
+                                      builder: (context) => AddUpdateRecipePage(
+                                        household: widget.household,
+                                        recipe: cubit.getRecipe()!,
+                                        canSaveWithoutChanges: true,
+                                      ),
+                                    ));
+                                    if (res == UpdateEnum.updated) {
+                                      Navigator.of(context)
+                                          .pop(UpdateEnum.updated);
+                                    }
+                                  }
+                                : null,
+                            child: Text(
+                              AppLocalizations.of(context)!.next,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: MediaQuery.paddingOf(context).bottom,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}

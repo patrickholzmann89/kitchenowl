@@ -27,6 +27,7 @@ import 'package:kitchenowl/pages/recipe_discover_page.dart';
 import 'package:kitchenowl/pages/recipe_page.dart';
 import 'package:kitchenowl/pages/recipe_pdf_scraper_page.dart';
 import 'package:kitchenowl/pages/recipe_scraper_page.dart';
+import 'package:kitchenowl/pages/recipe_text_scraper_page.dart';
 import 'package:kitchenowl/pages/settings_page.dart';
 import 'package:kitchenowl/pages/settings_user_page.dart';
 import 'package:kitchenowl/pages/setup_page.dart';
@@ -325,6 +326,16 @@ final router = GoRouter(
                   path: 'scrape-pdf',
                   builder: (context, state) => RecipePdfScraperPage(
                     file: state.extra as NamedByteArray,
+                    household: Household(
+                      id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                    ),
+                  ),
+                ),
+                GoRoute(
+                  parentNavigatorKey: _rootNavigatorKey,
+                  path: 'scrape-text',
+                  builder: (context, state) => RecipeTextScraperPage(
+                    text: state.extra as String,
                     household: Household(
                       id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
                     ),
