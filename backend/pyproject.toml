@@ -57,3 +57,9 @@ dev = [
 [tool.pyright]
 reportMissingTypeStubs = true
 typeCheckingMode = "strict"
+
+[tool.uv]
+no-binary-package = ["numpy"]
+
+[tool.uv.config-settings-package.numpy]
+setup-args = "-Dcpu-baseline=none"

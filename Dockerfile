@@ -83,7 +83,7 @@ LABEL org.opencontainers.image.source="https://github.com/TomBursch/kitchenowl"
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
         libxml2 libpcre2-dev libre2-dev libexpat1 curl \
-        media-types libicu-dev \
+        media-types libicu-dev libopenblas0 liblapack3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Use virtual enviroment
