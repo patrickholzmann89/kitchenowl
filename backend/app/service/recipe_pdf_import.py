@@ -113,6 +113,16 @@ def _findHeaderIndex(lines: list[str], keywords: set[str]) -> int | None:
     return None
 
 
+def _cleanIngredientLines(lines: list[str]) -> list[str]:
+    stripped = [line.strip() for line in lines if line.strip()]
+    bulleted = [line for line in stripped if _BULLET_RE.match(line)]
+    # Prefer bulleted lines when present - drops stray sub-section headings
+    # (e.g. "Für den Hummus") that share the ingredients block but aren't
+    # themselves list items.
+    source = bulleted if bulleted else stripped
+    return [_BULLET_RE.sub("", line).strip() for line in source]
+
+
 def _guessIngredientBlock(lines: list[str]) -> tuple[list[str], int | None]:
     ingredients: list[str] = []
     blockEnd = None
@@ -148,9 +158,7 @@ def parseRecipeStructureFallback(
             if instructionsIdx is not None and instructionsIdx > ingredientsIdx
             else len(lines)
         )
-        ingredients = [
-            line.strip() for line in lines[ingredientsIdx + 1 : end] if line.strip()
-        ]
+        ingredients = _cleanIngredientLines(lines[ingredientsIdx + 1 : end])
     else:
         # Skip past the title line itself - it's almost always short enough
         # to otherwise be mistaken for the first "ingredient".

@@ -85,7 +85,7 @@ class RecipeCreateFab extends StatelessWidget {
               BlocProvider.of<RecipeListCubit>(context).refresh();
             }
           },
-          child: const Icon(Icons.picture_as_pdf_rounded),
+          child: const Icon(Icons.picture_as_pdf),
         ),
       ],
     );
