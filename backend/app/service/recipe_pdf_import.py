@@ -95,9 +95,7 @@ _INSTRUCTION_HEADERS = {
     "zubereitung",
     "anleitung",
 }
-_BULLET_RE = re.compile(
-    r"^\s*([-•*]|\d+[.)]|[¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])\s*"
-)
+_NUMBERED_MARKER_RE = re.compile(r"^\d+[.)]\s*")
 _YIELDS_RE = re.compile(r"(\d+)\s*(?:servings?|portionen|personen)", re.IGNORECASE)
 
 
@@ -113,14 +111,37 @@ def _findHeaderIndex(lines: list[str], keywords: set[str]) -> int | None:
     return None
 
 
+def _isMarkerLine(line: str) -> bool:
+    # A numbered marker ("1.", "2)") or a single leading non-alphanumeric
+    # character. The latter deliberately isn't restricted to a fixed set of
+    # bullet characters ("-", "•", "*", ...): PDFs exported from word
+    # processors often render list bullets through a custom symbol font,
+    # which pypdf then extracts as an arbitrary (sometimes private-use-area)
+    # codepoint instead of the plain "•" glyph.
+    if not line:
+        return False
+    if _NUMBERED_MARKER_RE.match(line):
+        return True
+    return not line[0].isalnum()
+
+
+def _stripMarker(line: str) -> str:
+    match = _NUMBERED_MARKER_RE.match(line)
+    if match:
+        return line[match.end() :].strip()
+    if line and not line[0].isalnum():
+        return line[1:].strip()
+    return line
+
+
 def _cleanIngredientLines(lines: list[str]) -> list[str]:
     stripped = [line.strip() for line in lines if line.strip()]
-    bulleted = [line for line in stripped if _BULLET_RE.match(line)]
-    # Prefer bulleted lines when present - drops stray sub-section headings
-    # (e.g. "Für den Hummus") that share the ingredients block but aren't
-    # themselves list items.
-    source = bulleted if bulleted else stripped
-    return [_BULLET_RE.sub("", line).strip() for line in source]
+    marked = [line for line in stripped if _isMarkerLine(line)]
+    # Prefer marked (bulleted/numbered) lines when present - drops stray
+    # sub-section headings (e.g. "Für den Hummus") that share the
+    # ingredients block but aren't themselves list items.
+    source = marked if marked else stripped
+    return [_stripMarker(line) for line in source]
 
 
 def _guessIngredientBlock(lines: list[str]) -> tuple[list[str], int | None]:
@@ -133,8 +154,8 @@ def _guessIngredientBlock(lines: list[str]) -> tuple[list[str], int | None]:
                 blockEnd = i
                 break
             continue
-        if _BULLET_RE.match(stripped) or len(stripped) <= 60:
-            ingredients.append(_BULLET_RE.sub("", stripped).strip())
+        if _isMarkerLine(stripped) or len(stripped) <= 60:
+            ingredients.append(_stripMarker(stripped))
             blockEnd = i + 1
         elif ingredients:
             blockEnd = i
