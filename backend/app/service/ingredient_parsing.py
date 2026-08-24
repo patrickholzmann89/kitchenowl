@@ -133,6 +133,43 @@ _GERMAN_INGREDIENT_RE = re.compile(
 )
 _PARENTHETICAL_RE = re.compile(r"\(([^)]*)\)")
 
+# Descriptive adjectives/participles that commonly sit between the
+# quantity/unit and the actual ingredient noun (e.g. "500g kleine
+# Kartoffeln", "eiskaltes Wasser", "gehackte Petersilie"). Left in place they
+# break the "starts with" item lookup against the household's pantry, since
+# the item is named after the noun, not the description. Stripped into the
+# description instead, matching how a trailing comma clause is handled.
+_GERMAN_ADJECTIVE_STEMS = [
+    "klein",
+    "groß",
+    "frisch",
+    "gehackt",
+    "gewürfelt",
+    "gerieben",
+    "gepresst",
+    "getrocknet",
+    "eiskalt",
+    "kalt",
+    "warm",
+    "heiß",
+    "weich",
+    "hart",
+    "reif",
+    "geschält",
+    "entkernt",
+    "fein",
+    "grob",
+    "ganz",
+    "halbiert",
+    "geviertelt",
+    "zerkleinert",
+    "gemahlen",
+]
+_GERMAN_ADJECTIVE_RE = re.compile(
+    r"^(?:(?:" + "|".join(_GERMAN_ADJECTIVE_STEMS) + r")(?:e|er|es|en|em)?\s+)+",
+    re.IGNORECASE,
+)
+
 
 def parseGerman(ingredients: list[str]) -> list[IngredientParsingResult]:
     def parseGermanSingle(ingredient: str) -> IngredientParsingResult:
@@ -148,11 +185,16 @@ def parseGerman(ingredients: list[str]) -> list[IngredientParsingResult]:
         if qty and qty.lower() in _GERMAN_NUMBER_WORDS:
             qty = _GERMAN_NUMBER_WORDS[qty.lower()]
 
+        adjectiveMatch = _GERMAN_ADJECTIVE_RE.match(rest)
+        adjective = adjectiveMatch.group().strip() if adjectiveMatch else None
+        if adjectiveMatch:
+            rest = rest[adjectiveMatch.end() :]
+
         # Anything after the first comma is a preparation note (e.g. "gehackt"),
         # not part of the ingredient name.
         name = rest.split(",")[0].strip(" .-") or text_without_parens
 
-        description = " ".join(filter(None, [qty, unit, *notes]))
+        description = " ".join(filter(None, [qty, unit, adjective, *notes]))
 
         return IngredientParsingResult(ingredient, name, description)
 

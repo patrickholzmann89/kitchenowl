@@ -35,6 +35,13 @@ from app.service.ingredient_parsing import parseGerman
         ("Eintopf-Gemüse", "Eintopf-Gemüse", ""),
         ("Einlegegurken", "Einlegegurken", ""),
         ("Glas Nutella", "Nutella", "Glas"),
+        # A descriptive adjective/participle between quantity+unit and the
+        # noun must be moved into the description, not left in the name -
+        # otherwise it breaks matching against an existing pantry item.
+        ("500 g kleine Kartoffeln", "Kartoffeln", "500 g kleine"),
+        ("3-5 EL eiskaltes Wasser", "Wasser", "3-5 EL eiskaltes"),
+        ("1-2 EL gehackte Petersilie", "Petersilie", "1-2 EL gehackte"),
+        ("1 kleine Knoblauchzehe", "Knoblauchzehe", "1 kleine"),
     ],
 )
 def testParseGerman(ingredient, name, description):
