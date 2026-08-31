@@ -1,11 +1,20 @@
 import base64
 import json
+import re
 from typing import Any, cast
 
 from litellm import completion
 
 from app.models import Household, Item
 from app.service.ingredient_parsing import LLM_API_URL, LLM_MODEL
+
+# Models frequently wrap JSON responses in a markdown code fence despite
+# being told to return raw JSON - strip it before parsing.
+_CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.IGNORECASE)
+
+
+def _stripCodeFence(content: str) -> str:
+    return _CODE_FENCE_RE.sub("", content.strip()).strip()
 
 _SYSTEM_MESSAGE = """
 You are a tool that extracts the purchased line items from a photo of a grocery receipt (Kassenbon) and returns only JSON in the form of [{"raw_text": string, "normalized_name": string, "price": number, "quantity": integer}, ...].
@@ -36,7 +45,12 @@ def parseReceiptStructureLLM(imageBytes: bytes, mimeType: str) -> list[dict[str,
         api_base=LLM_API_URL,
         messages=messages,
     )
-    result = json.loads(response.choices[0].message.content)
+    content = response.choices[0].message.content or ""
+    try:
+        result = json.loads(_stripCodeFence(content))
+    except json.JSONDecodeError:
+        print("Receipt LLM returned non-JSON content:", content[:500])
+        raise
     if not isinstance(result, list):
         return []
 
