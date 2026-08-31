@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fraction/fraction.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:kitchenowl/app.dart';
 import 'package:kitchenowl/cubits/auth_cubit.dart';
 import 'package:kitchenowl/cubits/recipe_cubit.dart';
@@ -216,6 +217,20 @@ class _RecipePageState extends State<RecipePage> {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                if (state.household?.featurePricing ?? false)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: state.costEstimate.total != null
+                          ? Text(
+                              "${AppLocalizations.of(context)!.estimatedCost}: "
+                              "${NumberFormat.simpleCurrency(locale: state.household?.language).format(state.costEstimate.total!)}"
+                              "${!state.costEstimate.complete ? " (${AppLocalizations.of(context)!.approximately})" : ""}",
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ),
                 if (state.recipe.items.where((e) => !e.optional).isNotEmpty)

@@ -8,12 +8,15 @@ import 'package:kitchenowl/cubits/item_edit_cubit.dart';
 import 'package:kitchenowl/enums/update_enum.dart';
 import 'package:kitchenowl/helpers/build_context_extension.dart';
 import 'package:kitchenowl/helpers/item_description_parser.dart';
+import 'package:kitchenowl/helpers/units.dart';
 import 'package:kitchenowl/models/category.dart';
 import 'package:kitchenowl/models/item.dart';
+import 'package:kitchenowl/models/item_price.dart';
 import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/models/update_value.dart';
 import 'package:kitchenowl/widgets/item_popup_menu_button.dart';
+import 'package:kitchenowl/widgets/item_price_dialog.dart';
 import 'package:kitchenowl/widgets/item_wrap_menu.dart';
 import 'package:kitchenowl/widgets/recipe_item.dart';
 
@@ -37,6 +40,7 @@ class ItemPage<T extends Item> extends StatefulWidget {
 
 class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
   final TextEditingController descController = TextEditingController();
+  final TextEditingController amountController = TextEditingController();
 
   late ItemEditCubit<T> cubit;
 
@@ -44,7 +48,9 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
   void initState() {
     super.initState();
     if (widget.item is ItemWithDescription) {
-      descController.text = (widget.item as ItemWithDescription).description;
+      final item = widget.item as ItemWithDescription;
+      descController.text = item.description;
+      amountController.text = item.amount?.toString() ?? '';
     }
     cubit = ItemEditCubit<T>(
       household: context.read<HouseholdCubit>().state.household,
@@ -57,6 +63,7 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
   void dispose() {
     cubit.close();
     descController.dispose();
+    amountController.dispose();
     super.dispose();
   }
 
@@ -136,6 +143,52 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                             //   ),
                             // ),
                           ),
+                        ),
+                      ),
+                    ),
+                  if (widget.item is ItemWithDescription)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      sliver: SliverToBoxAdapter(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: amountController,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                onChanged: (s) => cubit
+                                    .setAmount(double.tryParse(s.replaceAll(',', '.'))),
+                                decoration: InputDecoration(
+                                  border: const OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(14)),
+                                  ),
+                                  labelText: AppLocalizations.of(context)!.amount,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            BlocBuilder<ItemEditCubit, ItemEditState>(
+                              bloc: cubit,
+                              buildWhen: (prev, curr) => prev.unit != curr.unit,
+                              builder: (context, state) => DropdownButton<String?>(
+                                value: state.unit,
+                                hint: Text(AppLocalizations.of(context)!.unit),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: null,
+                                    child: Text(AppLocalizations.of(context)!.none),
+                                  ),
+                                  for (final u in kUnitOptions)
+                                    DropdownMenuItem(value: u, child: Text(u)),
+                                ],
+                                onChanged: cubit.setUnit,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -253,6 +306,103 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                           ],
                         ),
                       ),
+                    ),
+                  if (widget.item is! RecipeItem)
+                    BlocBuilder<ItemEditCubit, ItemEditState>(
+                      bloc: cubit,
+                      buildWhen: (prev, curr) =>
+                          prev.prices != curr.prices ||
+                          prev.stores != curr.stores,
+                      builder: (context, state) {
+                        final household =
+                            context.read<HouseholdCubit>().state.household;
+                        if (!(household.featurePricing ?? false)) {
+                          return const SliverToBoxAdapter();
+                        }
+                        return SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, i) {
+                                if (i == 0) {
+                                  return Row(
+                                    children: [
+                                      Expanded(
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 8),
+                                          child: Text(
+                                            '${AppLocalizations.of(context)!.prices}:',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleLarge,
+                                          ),
+                                        ),
+                                      ),
+                                      if (state.stores.isNotEmpty)
+                                        IconButton(
+                                          icon: const Icon(Icons.add),
+                                          tooltip: AppLocalizations.of(context)!
+                                              .priceAdd,
+                                          onPressed: () async {
+                                            final price =
+                                                await showDialog<ItemPrice>(
+                                              context: context,
+                                              builder: (context) =>
+                                                  ItemPriceDialog(
+                                                stores: state.stores,
+                                              ),
+                                            );
+                                            if (price != null) {
+                                              cubit.addOrUpdateItemPrice(price);
+                                            }
+                                          },
+                                        ),
+                                    ],
+                                  );
+                                }
+                                final price = state.prices[i - 1];
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(price.store.name),
+                                  subtitle: Text(
+                                    '${AppLocalizations.of(context)!.packSize}: ${price.packAmount} ${price.packUnit}',
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        NumberFormat.simpleCurrency(
+                                          locale: household.language,
+                                        ).format(price.price),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_rounded),
+                                        onPressed: () =>
+                                            cubit.deleteItemPrice(price.store),
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () async {
+                                    final updated =
+                                        await showDialog<ItemPrice>(
+                                      context: context,
+                                      builder: (context) => ItemPriceDialog(
+                                        stores: state.stores,
+                                        initial: price,
+                                      ),
+                                    );
+                                    if (updated != null) {
+                                      cubit.addOrUpdateItemPrice(updated);
+                                    }
+                                  },
+                                );
+                              },
+                              childCount: state.prices.length + 1,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   if (widget.advancedView)
                     BlocBuilder<ItemEditCubit, ItemEditState>(

@@ -1,4 +1,5 @@
-from marshmallow import EXCLUDE, fields, Schema
+from marshmallow import EXCLUDE, fields, Schema, validate
+from app.util.units import ALLOWED_UNITS
 
 
 class AddRecipe(Schema):
@@ -9,6 +10,8 @@ class AddRecipe(Schema):
         name = fields.String(required=True, validate=lambda a: a and not a.isspace())
         description = fields.String(load_default="")
         optional = fields.Boolean(load_default=True)
+        amount = fields.Float(allow_none=True)
+        unit = fields.String(allow_none=True, validate=validate.OneOf(ALLOWED_UNITS))
 
     name = fields.String(required=True, validate=lambda a: a and not a.isspace())
     description = fields.String(validate=lambda a: a is not None)
@@ -32,6 +35,8 @@ class UpdateRecipe(Schema):
         name = fields.String(required=True, validate=lambda a: a and not a.isspace())
         description = fields.String()
         optional = fields.Boolean(load_default=True)
+        amount = fields.Float(allow_none=True)
+        unit = fields.String(allow_none=True, validate=validate.OneOf(ALLOWED_UNITS))
 
     name = fields.String(validate=lambda a: a and not a.isspace())
     description = fields.String(validate=lambda a: a is not None)
@@ -87,3 +92,7 @@ class ScrapeRecipeText(Schema):
 
 class SuggestionsRecipe(Schema):
     language = fields.String()
+
+
+class GetRecipeCost(Schema):
+    yields = fields.Integer(validate=lambda a: a > 0)

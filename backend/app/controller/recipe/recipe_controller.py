@@ -12,6 +12,7 @@ from app.models.recipe import RecipeVisibility
 from app.service.file_has_access_or_download import file_has_access_or_download
 from app.service.recipe_scraping import scrape
 from app.service.recipe_pdf_import import extractPdfText, extractRecipeFromText
+from app.service import pricing
 from .schemas import (
     SearchByNameRequest,
     AddRecipe,
@@ -21,6 +22,7 @@ from .schemas import (
     ScrapeRecipe,
     ScrapeRecipeText,
     SuggestionsRecipe,
+    GetRecipeCost,
 )
 
 recipe = Blueprint("recipe", __name__)
@@ -71,6 +73,37 @@ def getRecipeById(id):
     return jsonify(recipe.obj_to_public_dict())
 
 
+@recipe.route("/<int:id>/cost", methods=["GET"])
+@jwt_required()
+@validate_args(GetRecipeCost)
+def getRecipeCost(args, id):
+    recipe = Recipe.find_by_id(id)
+    if not recipe:
+        raise NotFoundRequest()
+    recipe.checkAuthorized()
+
+    household = Household.find_by_id(recipe.household_id)
+    if (
+        not household
+        or not household.pricing_feature
+        or not household.preferred_store_id
+    ):
+        return jsonify(
+            {"total": None, "complete": False, "priced_items": 0, "total_items": 0}
+        )
+
+    yield_factor = (
+        args["yields"] / recipe.yields
+        if "yields" in args and recipe.yields
+        else 1.0
+    )
+    return jsonify(
+        pricing.compute_recipe_cost(
+            recipe, household.preferred_store_id, yield_factor
+        )
+    )
+
+
 @recipeHousehold.route("", methods=["POST"])
 @jwt_required()
 @authorize_household()
@@ -115,7 +148,10 @@ def addRecipe(args, household_id):
             if not item:
                 item = Item.create_by_name(household_id, recipeItem["name"])
             con = RecipeItems(
-                description=recipeItem["description"], optional=recipeItem["optional"]
+                description=recipeItem["description"],
+                optional=recipeItem["optional"],
+                amount=recipeItem.get("amount"),
+                unit=recipeItem.get("unit"),
             )
             con.item = item
             con.recipe = recipe
@@ -177,10 +213,16 @@ def updateRecipe(args, id):  # noqa: C901
                     con.description = recipeItem["description"]
                 if "optional" in recipeItem:
                     con.optional = recipeItem["optional"]
+                if "amount" in recipeItem:
+                    con.amount = recipeItem["amount"]
+                if "unit" in recipeItem:
+                    con.unit = recipeItem["unit"]
             else:
                 con = RecipeItems(
                     description=recipeItem["description"],
                     optional=recipeItem["optional"],
+                    amount=recipeItem.get("amount"),
+                    unit=recipeItem.get("unit"),
                 )
             con.item = item
             con.recipe = recipe

@@ -2,9 +2,9 @@ import gevent
 from app.config import SUPPORTED_LANGUAGES
 from app.helpers import validate_args, authorize_household, RequiredRights
 from flask import jsonify, Blueprint
-from app.errors import NotFoundRequest
+from app.errors import InvalidUsage, NotFoundRequest
 from flask_jwt_extended import current_user, jwt_required
-from app.models import Household, HouseholdMember, Shoppinglist, User
+from app.models import Household, HouseholdMember, Shoppinglist, Store, User
 from app.service.import_language import importLanguage
 from app.service.file_has_access_or_download import file_has_access_or_download
 from .schemas import AddHousehold, UpdateHousehold, UpdateHouseholdMember
@@ -53,6 +53,8 @@ def addHousehold(args):
         household.planner_feature = args["planner_feature"]
     if "expenses_feature" in args:
         household.expenses_feature = args["expenses_feature"]
+    if "pricing_feature" in args:
+        household.pricing_feature = args["pricing_feature"]
     if "view_ordering" in args:
         household.view_ordering = args["view_ordering"]
     if "link" in args:
@@ -111,6 +113,14 @@ def updateHousehold(args, household_id):
         household.planner_feature = args["planner_feature"]
     if "expenses_feature" in args:
         household.expenses_feature = args["expenses_feature"]
+    if "pricing_feature" in args:
+        household.pricing_feature = args["pricing_feature"]
+    if "preferred_store_id" in args:
+        if args["preferred_store_id"] is not None:
+            store = Store.find_by_id(args["preferred_store_id"])
+            if not store or store.household_id != household.id:
+                raise InvalidUsage()
+        household.preferred_store_id = args["preferred_store_id"]
     if "view_ordering" in args:
         household.view_ordering = args["view_ordering"]
     if "link" in args:

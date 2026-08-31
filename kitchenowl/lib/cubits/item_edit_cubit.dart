@@ -4,8 +4,10 @@ import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/category.dart';
 import 'package:kitchenowl/models/household.dart';
 import 'package:kitchenowl/models/item.dart';
+import 'package:kitchenowl/models/item_price.dart';
 import 'package:kitchenowl/models/recipe.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
+import 'package:kitchenowl/models/store.dart';
 import 'package:kitchenowl/services/api/api_service.dart';
 import 'package:kitchenowl/services/transaction_handler.dart';
 import 'package:kitchenowl/services/transactions/item.dart';
@@ -23,6 +25,8 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
         category: Nullable(state.category),
         icon: Nullable(state.icon),
         name: state.name,
+        amount: Nullable(state.amount),
+        unit: Nullable(state.unit),
       )) as T);
     }
 
@@ -40,6 +44,8 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
           icon: item.icon,
           name: item.name,
           category: item.category,
+          amount: (item is ItemWithDescription) ? item.amount : null,
+          unit: (item is ItemWithDescription) ? item.unit : null,
         )) {
     refresh();
   }
@@ -61,17 +67,30 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
           }
         }));
       emit(state.copyWith(recipes: recipes));
+
+      if (_item is! RecipeItem) {
+        final prices = await ApiService.getInstance().getItemPrices(_item);
+        emit(state.copyWith(prices: prices ?? const []));
+
+        if (household != null) {
+          final stores = await ApiService.getInstance().getStores(household!);
+          emit(state.copyWith(stores: stores ?? const []));
+        }
+      }
     }
   }
 
   Future<void> saveItem() async {
-    if (shoppingList != null && state.hasChangedDescription(_item)) {
+    if (shoppingList != null &&
+        (state.hasChangedDescription(_item) || state.hasChangedAmount(_item))) {
       await TransactionHandler.getInstance()
           .runTransaction(TransactionShoppingListUpdateItem(
         household: household!,
         shoppinglist: shoppingList!,
         item: _item,
         description: state.description,
+        amount: state.amount,
+        unit: state.unit,
       ));
     }
     if (state.hasChangedItem(_item)) {
@@ -128,6 +147,31 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
       icon: Nullable(icon),
     ));
   }
+
+  void setAmount(double? amount) {
+    emit(state.copyWith(amount: Nullable(amount)));
+  }
+
+  void setUnit(String? unit) {
+    emit(state.copyWith(unit: Nullable(unit)));
+  }
+
+  Future<bool> addOrUpdateItemPrice(ItemPrice price) async {
+    if (_item.id == null) return false;
+    final res =
+        await ApiService.getInstance().addOrUpdateItemPrice(_item, price);
+    refresh();
+
+    return res;
+  }
+
+  Future<bool> deleteItemPrice(Store store) async {
+    if (_item.id == null) return false;
+    final res = await ApiService.getInstance().deleteItemPrice(_item, store);
+    refresh();
+
+    return res;
+  }
 }
 
 class ItemEditState extends Equatable {
@@ -137,6 +181,10 @@ class ItemEditState extends Equatable {
   final List<Recipe> recipes;
   final Category? category;
   final bool hasMerged;
+  final double? amount;
+  final String? unit;
+  final List<ItemPrice> prices;
+  final List<Store> stores;
 
   const ItemEditState({
     this.name = "",
@@ -145,6 +193,10 @@ class ItemEditState extends Equatable {
     this.recipes = const [],
     this.category,
     this.hasMerged = false,
+    this.amount,
+    this.unit,
+    this.prices = const [],
+    this.stores = const [],
   });
 
   ItemEditState copyWith({
@@ -154,6 +206,10 @@ class ItemEditState extends Equatable {
     List<Recipe>? recipes,
     Nullable<Category>? category,
     bool? hasMerged,
+    Nullable<double>? amount,
+    Nullable<String>? unit,
+    List<ItemPrice>? prices,
+    List<Store>? stores,
   }) =>
       ItemEditState(
         name: name ?? this.name,
@@ -162,14 +218,30 @@ class ItemEditState extends Equatable {
         recipes: recipes ?? this.recipes,
         category: (category ?? Nullable(this.category)).value,
         hasMerged: hasMerged ?? this.hasMerged,
+        amount: (amount ?? Nullable(this.amount)).value,
+        unit: (unit ?? Nullable(this.unit)).value,
+        prices: prices ?? this.prices,
+        stores: stores ?? this.stores,
       );
 
   @override
-  List<Object?> get props =>
-      [name, description, icon, recipes, category, hasMerged];
+  List<Object?> get props => [
+        name,
+        description,
+        icon,
+        recipes,
+        category,
+        hasMerged,
+        amount,
+        unit,
+        prices,
+        stores,
+      ];
 
   bool hasChanged(Item comparedTo) =>
-      hasChangedItem(comparedTo) || hasChangedDescription(comparedTo);
+      hasChangedItem(comparedTo) ||
+      hasChangedDescription(comparedTo) ||
+      hasChangedAmount(comparedTo);
 
   bool hasChangedItem(Item comparedTo) =>
       comparedTo.category != category ||
@@ -180,5 +252,10 @@ class ItemEditState extends Equatable {
   bool hasChangedDescription(Item comparedTo) {
     return comparedTo is ItemWithDescription &&
         (comparedTo).description != description;
+  }
+
+  bool hasChangedAmount(Item comparedTo) {
+    return comparedTo is ItemWithDescription &&
+        (comparedTo.amount != amount || comparedTo.unit != unit);
   }
 }

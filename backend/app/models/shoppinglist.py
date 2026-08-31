@@ -66,6 +66,8 @@ class ShoppinglistItems(Model):
         db.Integer, db.ForeignKey("item.id"), primary_key=True
     )
     description: Mapped[str] = db.Column(db.String)
+    amount: Mapped[float | None] = db.Column(db.Float, nullable=True)
+    unit: Mapped[str | None] = db.Column(db.String(16), nullable=True)
     created_by: Mapped[int | None] = db.Column(
         db.Integer, db.ForeignKey("user.id"), nullable=True
     )
@@ -96,6 +98,8 @@ class ShoppinglistItems(Model):
     def obj_to_item_dict(self) -> dict[str, Any]:
         res = self.item.obj_to_dict()
         res["description"] = getattr(self, "description")
+        res["amount"] = getattr(self, "amount")
+        res["unit"] = getattr(self, "unit")
         res["created_at"] = getattr(self, "created_at")
         res["updated_at"] = getattr(self, "updated_at")
         res["created_by"] = getattr(self, "created_by")

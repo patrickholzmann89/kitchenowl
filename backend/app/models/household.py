@@ -1,4 +1,4 @@
-from typing import Any, Self, List, TYPE_CHECKING, cast
+from typing import Any, Optional, Self, List, TYPE_CHECKING, cast
 from app import db
 from app.helpers.db_list_type import DbListType
 from sqlalchemy.orm import Mapped
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         Tag,
         Expense,
         ExpenseCategory,
+        Store,
         User,
         File,
     )
@@ -33,6 +34,14 @@ class Household(Model):
     )
     expenses_feature: Mapped[bool] = db.Column(
         db.Boolean(), nullable=False, default=True
+    )
+    pricing_feature: Mapped[bool] = db.Column(
+        db.Boolean(), nullable=False, default=True
+    )
+    preferred_store_id: Mapped[int | None] = db.Column(
+        db.Integer,
+        db.ForeignKey("store.id", use_alter=True, name="fk_household_preferred_store_id_store"),
+        nullable=True,
     )
     description: Mapped[str | None] = db.Column(db.String())
     link: Mapped[str | None] = db.Column(db.String(255))
@@ -113,6 +122,23 @@ class Household(Model):
             uselist=False,
         ),
     )
+    stores: Mapped[List["Store"]] = cast(
+        Mapped[List["Store"]],
+        db.relationship(
+            "Store",
+            back_populates="household",
+            cascade="all, delete-orphan",
+            foreign_keys="Store.household_id",
+        ),
+    )
+    preferred_store: Mapped[Optional["Store"]] = cast(
+        Mapped[Optional["Store"]],
+        db.relationship(
+            "Store",
+            foreign_keys=[preferred_store_id],
+            uselist=False,
+        ),
+    )
 
     def obj_to_dict(
         self,
@@ -149,6 +175,7 @@ class Household(Model):
             "view_ordering": self.view_ordering,
             "planner_feature": self.planner_feature,
             "expenses_feature": self.expenses_feature,
+            "pricing_feature": self.pricing_feature,
             "member": [m.user.username for m in getattr(self, "member")],
             "shoppinglists": [s.name for s in self.shoppinglists],
             "recipes": [s.obj_to_export_dict() for s in self.recipes],

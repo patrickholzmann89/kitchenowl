@@ -2,6 +2,7 @@ import 'package:kitchenowl/app.dart';
 import 'package:kitchenowl/enums/shoppinglist_sorting.dart';
 import 'package:kitchenowl/models/household.dart';
 import 'package:kitchenowl/models/item.dart';
+import 'package:kitchenowl/models/nullable.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/services/storage/mem_storage.dart';
 import 'package:kitchenowl/services/transaction.dart';
@@ -275,12 +276,16 @@ class TransactionShoppingListUpdateItem extends Transaction<bool> {
   final ShoppingList shoppinglist;
   final Item item;
   final String description;
+  final double? amount;
+  final String? unit;
 
   TransactionShoppingListUpdateItem({
     required this.household,
     required this.shoppinglist,
     required this.item,
     required this.description,
+    this.amount,
+    this.unit,
     DateTime? timestamp,
   }) : super.internal(
           timestamp ?? DateTime.now(),
@@ -296,6 +301,8 @@ class TransactionShoppingListUpdateItem extends Transaction<bool> {
         shoppinglist: ShoppingList.fromJson(map['shoppinglist']),
         item: Item.fromJson(map['item']),
         description: map['description'],
+        amount: (map['amount'] as num?)?.toDouble(),
+        unit: map['unit'],
         timestamp: timestamp,
       );
 
@@ -309,6 +316,8 @@ class TransactionShoppingListUpdateItem extends Transaction<bool> {
       "shoppinglist": shoppinglist.toJsonWithId(),
       "item": item.toJsonWithId(),
       "description": description,
+      "amount": amount,
+      "unit": unit,
     });
 
   @override
@@ -321,14 +330,21 @@ class TransactionShoppingListUpdateItem extends Transaction<bool> {
 
     if (item is ShoppinglistItem) {
       final int i = latestShoppingList.items.indexWhere((e) => e.id == item.id);
-      latestShoppingList.items[i] =
-          (item as ShoppinglistItem).copyWith(description: description);
+      latestShoppingList.items[i] = (item as ShoppinglistItem).copyWith(
+        description: description,
+        amount: Nullable(amount),
+        unit: Nullable(unit),
+      );
       MemStorage.getInstance().writeShoppingLists(household, shoppingLists);
 
       return true;
     } else if (description.isNotEmpty) {
-      latestShoppingList.items
-          .add(ShoppinglistItem(name: item.name, description: description));
+      latestShoppingList.items.add(ShoppinglistItem(
+        name: item.name,
+        description: description,
+        amount: amount,
+        unit: unit,
+      ));
       latestShoppingList.recentItems
           .removeWhere((item) => item.name == this.item.name);
       MemStorage.getInstance().writeShoppingLists(household, shoppingLists);
@@ -343,7 +359,8 @@ class TransactionShoppingListUpdateItem extends Transaction<bool> {
   Future<bool?> runOnline() async {
     return ApiService.getInstance().putItem(
       shoppinglist,
-      ItemWithDescription.fromItem(item: item, description: description),
+      ItemWithDescription.fromItem(item: item, description: description)
+          .copyWith(amount: Nullable(amount), unit: Nullable(unit)),
     );
   }
 }

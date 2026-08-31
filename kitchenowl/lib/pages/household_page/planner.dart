@@ -157,6 +157,18 @@ class _PlannerPageState extends State<PlannerPage> {
                       ),
                     ),
                   ),
+                  if (state.costEstimate.total != null)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      sliver: SliverToBoxAdapter(
+                        child: Text(
+                          "${AppLocalizations.of(context)!.estimatedCostNext7Days}: "
+                          "${NumberFormat.simpleCurrency(locale: household.language).format(state.costEstimate.total!)}"
+                          "${!state.costEstimate.complete ? " (${AppLocalizations.of(context)!.approximately})" : ""}",
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ),
                   if (state.recipePlans.isEmpty)
                     SliverToBoxAdapter(
                       child: Padding(

@@ -69,6 +69,8 @@ extension ShoppinglistApi on ApiService {
     final Map<String, dynamic> data = {};
     if (item is ItemWithDescription) {
       data['description'] = item.description;
+      data['amount'] = item.amount;
+      data['unit'] = item.unit;
     }
     final res = await put(
       '${route(shoppinglist: shoppinglist)}/item/${item.id}',

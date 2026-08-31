@@ -3,8 +3,9 @@ from flask import jsonify, Blueprint
 from flask_jwt_extended import jwt_required
 from app import db
 from app.helpers import validate_args, authorize_household
-from app.models import Recipe, RecipeHistory, Planner
-from .schemas import AddPlannedRecipe, RemovePlannedRecipe
+from app.models import Household, Recipe, RecipeHistory, Planner
+from app.service import pricing
+from .schemas import AddPlannedRecipe, RemovePlannedRecipe, GetPlannerCost
 from datetime import datetime, timedelta, timezone, date
 
 
@@ -67,6 +68,37 @@ def getPlanner(household_id):
     for d in k:
         d["day"] = transform_cooking_date_to_day(d["cooking_date"].date())
     return jsonify(k)
+
+
+@plannerHousehold.route("/cost", methods=["GET"])
+@jwt_required()
+@authorize_household()
+@validate_args(GetPlannerCost)
+def getPlannerCost(args, household_id):
+    household = Household.find_by_id(household_id)
+    if (
+        not household
+        or not household.pricing_feature
+        or not household.preferred_store_id
+    ):
+        return jsonify(
+            {"total": None, "complete": False, "priced_items": 0, "total_items": 0, "lines": {}}
+        )
+
+    # Planner.cooking_date is stored as a naive UTC datetime (see
+    # addPlannedRecipe's datetime.combine usage) - match that here so the
+    # comparison in compute_weekly_cost doesn't mix naive/aware datetimes.
+    start = datetime.fromtimestamp(args["start"] / 1000, timezone.utc).replace(
+        tzinfo=None
+    )
+    end = datetime.fromtimestamp(args["end"] / 1000, timezone.utc).replace(
+        tzinfo=None
+    )
+    return jsonify(
+        pricing.compute_weekly_cost(
+            household_id, household.preferred_store_id, start, end
+        )
+    )
 
 
 @plannerHousehold.route("/recipe", methods=["POST"])

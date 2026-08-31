@@ -1,4 +1,5 @@
-from marshmallow import fields, Schema, EXCLUDE
+from marshmallow import fields, Schema, EXCLUDE, validate
+from app.util.units import ALLOWED_UNITS
 
 
 class GetShoppingLists(Schema):
@@ -20,6 +21,8 @@ class AddRecipeItems(Schema):
         name = fields.String(required=True, validate=lambda a: a and not a.isspace())
         description = fields.String(load_default="")
         optional = fields.Boolean(load_default=True)
+        amount = fields.Float(allow_none=True)
+        unit = fields.String(allow_none=True, validate=validate.OneOf(ALLOWED_UNITS))
 
     items = fields.List(fields.Nested(RecipeItem))
 
@@ -43,6 +46,8 @@ class GetRecentItems(Schema):
 
 class UpdateDescription(Schema):
     description = fields.String(required=True)
+    amount = fields.Float(allow_none=True)
+    unit = fields.String(allow_none=True, validate=validate.OneOf(ALLOWED_UNITS))
 
 
 class RemoveItem(Schema):

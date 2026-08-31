@@ -2,7 +2,9 @@ import 'package:animations/animations.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:kitchenowl/app.dart';
+import 'package:kitchenowl/cubits/household_cubit.dart';
 import 'package:kitchenowl/cubits/settings_cubit.dart';
 import 'package:kitchenowl/cubits/shoppinglist_cubit.dart';
 import 'package:kitchenowl/enums/shoppinglist_sorting.dart';
@@ -81,7 +83,18 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
             child: BlocBuilder<ShoppinglistCubit, ShoppinglistCubitState>(
               bloc: cubit,
               builder: (context, state) {
-                final header = LeftRightWrap(
+                final costBanner = state.costEstimate.total != null
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                        child: Text(
+                          "${AppLocalizations.of(context)!.estimatedCost}: "
+                          "${NumberFormat.simpleCurrency(locale: BlocProvider.of<HouseholdCubit>(context).state.household.language).format(state.costEstimate.total!)}"
+                          "${!state.costEstimate.complete ? " (${AppLocalizations.of(context)!.approximately})" : ""}",
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      )
+                    : const SizedBox.shrink();
+                final headerRow = LeftRightWrap(
                   left: (state.shoppinglists.length < 2)
                       ? const SizedBox()
                       : ChoiceScroll(
@@ -116,6 +129,9 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
                       icon: const Icon(Icons.sort),
                     ),
                   ),
+                );
+                final header = Column(
+                  children: [headerRow, costBanner],
                 );
 
                 if (state is! SearchShoppinglistCubitState &&

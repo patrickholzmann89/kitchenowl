@@ -1,4 +1,15 @@
-from marshmallow import fields, Schema, EXCLUDE
+from marshmallow import fields, Schema, EXCLUDE, validate
+from app.util.units import ALLOWED_UNITS
+
+
+class AddOrUpdateItemPrice(Schema):
+    class Meta:
+        unknown = EXCLUDE
+
+    store_id = fields.Integer(required=True, validate=lambda a: a > 0)
+    price = fields.Float(required=True, validate=lambda a: a >= 0)
+    pack_amount = fields.Float(required=True, validate=lambda a: a > 0)
+    pack_unit = fields.String(required=True, validate=validate.OneOf(ALLOWED_UNITS))
 
 
 class SearchByNameRequest(Schema):

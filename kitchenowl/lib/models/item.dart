@@ -84,6 +84,8 @@ class Item extends Model {
 
 class ItemWithDescription extends Item {
   final String description;
+  final double? amount;
+  final String? unit;
 
   const ItemWithDescription({
     super.id,
@@ -94,6 +96,8 @@ class ItemWithDescription extends Item {
     super.defaultKey,
     super.category,
     this.description = '',
+    this.amount,
+    this.unit,
   });
 
   factory ItemWithDescription.fromJson(Map<String, dynamic> map) =>
@@ -101,6 +105,8 @@ class ItemWithDescription extends Item {
         id: map['id'],
         name: map['name'],
         description: map['description'] ?? "",
+        amount: (map['amount'] as num?)?.toDouble(),
+        unit: map['unit'],
         icon: map['icon'],
         isDefault: map['default'],
         defaultKey: map['default_key'],
@@ -122,12 +128,16 @@ class ItemWithDescription extends Item {
         defaultKey: item.defaultKey,
         description: description ??
             ((item is ItemWithDescription) ? item.description : ''),
+        amount: item is ItemWithDescription ? item.amount : null,
+        unit: item is ItemWithDescription ? item.unit : null,
       );
 
   @override
   Map<String, dynamic> toJson() => super.toJson()
     ..addAll({
       "description": description,
+      "amount": amount,
+      "unit": unit,
     });
 
   @override
@@ -136,6 +146,8 @@ class ItemWithDescription extends Item {
     Nullable<Category>? category,
     Nullable<String>? icon,
     String? description,
+    Nullable<double>? amount,
+    Nullable<String>? unit,
   }) =>
       ItemWithDescription(
         id: id,
@@ -143,13 +155,15 @@ class ItemWithDescription extends Item {
         category: (category ?? Nullable(this.category)).value,
         icon: (icon ?? Nullable(this.icon)).value,
         description: description ?? this.description,
+        amount: (amount ?? Nullable(this.amount)).value,
+        unit: (unit ?? Nullable(this.unit)).value,
         ordering: ordering,
         isDefault: isDefault,
         defaultKey: defaultKey,
       );
 
   @override
-  List<Object?> get props => super.props + [description];
+  List<Object?> get props => super.props + [description, amount, unit];
 }
 
 class ShoppinglistItem extends ItemWithDescription {
@@ -160,6 +174,8 @@ class ShoppinglistItem extends ItemWithDescription {
     super.id,
     required super.name,
     super.description = '',
+    super.amount,
+    super.unit,
     super.category,
     super.icon,
     super.ordering = 0,
@@ -174,6 +190,8 @@ class ShoppinglistItem extends ItemWithDescription {
       id: map['id'],
       name: map['name'],
       description: map['description'],
+      amount: (map['amount'] as num?)?.toDouble(),
+      unit: map['unit'],
       ordering: map['ordering'],
       isDefault: map['default'],
       defaultKey: map['default_key'],
@@ -203,6 +221,8 @@ class ShoppinglistItem extends ItemWithDescription {
         icon: item.icon,
         description: description ??
             (item is ItemWithDescription ? item.description : ""),
+        amount: item is ItemWithDescription ? item.amount : null,
+        unit: item is ItemWithDescription ? item.unit : null,
         category: item.category,
         ordering: item.ordering,
         isDefault: item.isDefault,
@@ -217,6 +237,8 @@ class ShoppinglistItem extends ItemWithDescription {
     Nullable<Category>? category,
     Nullable<String>? icon,
     String? description,
+    Nullable<double>? amount,
+    Nullable<String>? unit,
   }) =>
       ShoppinglistItem(
         id: id,
@@ -224,6 +246,8 @@ class ShoppinglistItem extends ItemWithDescription {
         category: (category ?? Nullable(this.category)).value,
         icon: (icon ?? Nullable(this.icon)).value,
         description: description ?? this.description,
+        amount: (amount ?? Nullable(this.amount)).value,
+        unit: (unit ?? Nullable(this.unit)).value,
         ordering: ordering,
         isDefault: isDefault,
         defaultKey: defaultKey,
@@ -247,6 +271,8 @@ class RecipeItem extends ItemWithDescription {
     super.id,
     required super.name,
     super.description = '',
+    super.amount,
+    super.unit,
     super.ordering = 0,
     super.defaultKey,
     super.isDefault,
@@ -259,6 +285,8 @@ class RecipeItem extends ItemWithDescription {
         id: map['id'],
         name: map['name'] ?? '',
         description: map['description'],
+        amount: (map['amount'] as num?)?.toDouble(),
+        unit: map['unit'],
         icon: map['icon'],
         isDefault: map['default'],
         defaultKey: map['default_key'],
@@ -282,6 +310,8 @@ class RecipeItem extends ItemWithDescription {
         defaultKey: item.defaultKey,
         description:
             item is ItemWithDescription ? item.description : description,
+        amount: item is ItemWithDescription ? item.amount : null,
+        unit: item is ItemWithDescription ? item.unit : null,
         optional: optional,
       );
 
@@ -297,6 +327,8 @@ class RecipeItem extends ItemWithDescription {
     Nullable<Category>? category,
     Nullable<String>? icon,
     String? description,
+    Nullable<double>? amount,
+    Nullable<String>? unit,
     bool? optional,
   }) =>
       RecipeItem(
@@ -305,6 +337,8 @@ class RecipeItem extends ItemWithDescription {
         category: (category ?? Nullable(this.category)).value,
         icon: (icon ?? Nullable(this.icon)).value,
         description: description ?? this.description,
+        amount: (amount ?? Nullable(this.amount)).value,
+        unit: (unit ?? Nullable(this.unit)).value,
         optional: optional ?? this.optional,
         ordering: ordering,
         isDefault: isDefault,
@@ -315,9 +349,15 @@ class RecipeItem extends ItemWithDescription {
     Fraction factor, {
     bool addDescriptionWhenEmpty = true,
   }) {
-    if (!addDescriptionWhenEmpty) return this;
+    final scaledAmount = amount != null ? amount! * factor.toDouble() : null;
+    if (!addDescriptionWhenEmpty) {
+      return copyWith(amount: Nullable(scaledAmount));
+    }
 
-    return copyWith(description: StringScaler.scale(description, factor));
+    return copyWith(
+      description: StringScaler.scale(description, factor),
+      amount: Nullable(scaledAmount),
+    );
   }
 
   Item toItem() => Item(
@@ -339,6 +379,8 @@ class RecipeItem extends ItemWithDescription {
         isDefault: isDefault,
         category: category,
         description: description,
+        amount: amount,
+        unit: unit,
       );
 
   ShoppinglistItem toShoppingListItem() => ShoppinglistItem(
@@ -350,6 +392,8 @@ class RecipeItem extends ItemWithDescription {
         isDefault: isDefault,
         category: category,
         description: description,
+        amount: amount,
+        unit: unit,
       );
 
   @override

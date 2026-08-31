@@ -2,6 +2,7 @@ from flask import jsonify, Blueprint
 from flask_jwt_extended import current_user, jwt_required
 from app import db
 from app.models import (
+    Household,
     Item,
     Shoppinglist,
     History,
@@ -25,6 +26,8 @@ from .schemas import (
 from app.errors import NotFoundRequest, InvalidUsage
 from datetime import datetime, timedelta, timezone
 import app.util.description_merger as description_merger
+import app.util.units as units
+from app.service import pricing
 from app import socketio
 
 
@@ -142,6 +145,10 @@ def updateItemDescription(args, id: int, item_id: int):
     con.shoppinglist.checkAuthorized()
 
     con.description = args["description"] or ""
+    if "amount" in args:
+        con.amount = args["amount"]
+    if "unit" in args:
+        con.unit = args["unit"]
     con.save()
     socketio.emit(
         "shoppinglist_item:add",
@@ -180,6 +187,29 @@ def getAllShoppingListItems(args, id):
         .all()
     )
     return jsonify([e.obj_to_item_dict() for e in items])
+
+
+@shoppinglist.route("/<int:id>/cost", methods=["GET"])
+@jwt_required()
+def getShoppinglistCost(id):
+    shoppinglist = Shoppinglist.find_by_id(id)
+    if not shoppinglist:
+        raise NotFoundRequest()
+    shoppinglist.checkAuthorized()
+
+    household = Household.find_by_id(shoppinglist.household_id)
+    if (
+        not household
+        or not household.pricing_feature
+        or not household.preferred_store_id
+    ):
+        return jsonify(
+            {"total": None, "complete": False, "priced_items": 0, "total_items": 0, "lines": {}}
+        )
+
+    return jsonify(
+        pricing.compute_shoppinglist_cost(shoppinglist, household.preferred_store_id)
+    )
 
 
 @shoppinglist.route("/<int:id>/recent-items", methods=["GET"])
@@ -412,9 +442,19 @@ def addRecipeItems(args, id):
                     con.description = description_merger.merge(
                         con.description, description
                     )
+                    con.amount, con.unit = units.merge_structured_amount(
+                        con.amount,
+                        con.unit,
+                        recipeItem.get("amount"),
+                        recipeItem.get("unit"),
+                    )
                     db.session.add(con)
                 else:
-                    con = ShoppinglistItems(description=description)
+                    con = ShoppinglistItems(
+                        description=description,
+                        amount=recipeItem.get("amount"),
+                        unit=recipeItem.get("unit"),
+                    )
                     con.created_by = current_user.id
                     con.item = item
                     con.shoppinglist = shoppinglist

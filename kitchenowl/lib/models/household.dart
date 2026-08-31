@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:kitchenowl/enums/views_enum.dart';
 import 'package:kitchenowl/models/member.dart';
 import 'package:kitchenowl/models/model.dart';
+import 'package:kitchenowl/models/nullable.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/models/user.dart';
 
@@ -13,6 +14,8 @@ class Household extends Model {
   final String? language;
   final bool? featurePlanner;
   final bool? featureExpenses;
+  final bool? featurePricing;
+  final int? preferredStoreId;
   final List<ViewsEnum>? viewOrdering;
   final List<Member>? member;
   final ShoppingList? defaultShoppingList;
@@ -28,6 +31,8 @@ class Household extends Model {
     this.language,
     this.featurePlanner,
     this.featureExpenses,
+    this.featurePricing,
+    this.preferredStoreId,
     this.viewOrdering,
     this.member,
     this.defaultShoppingList,
@@ -57,6 +62,8 @@ class Household extends Model {
       language: map['language'],
       featurePlanner: map['planner_feature'] ?? false,
       featureExpenses: map['expenses_feature'] ?? false,
+      featurePricing: map['pricing_feature'] ?? false,
+      preferredStoreId: map['preferred_store_id'],
       description: map['description'],
       link: map['link'],
       verified: map['verified'] ?? false,
@@ -77,6 +84,8 @@ class Household extends Model {
     bool? verified,
     bool? featurePlanner,
     bool? featureExpenses,
+    bool? featurePricing,
+    Nullable<int>? preferredStoreId,
     List<ViewsEnum>? viewOrdering,
   }) =>
       Household(
@@ -87,6 +96,9 @@ class Household extends Model {
         language: language ?? this.language,
         featurePlanner: featurePlanner ?? this.featurePlanner,
         featureExpenses: featureExpenses ?? this.featureExpenses,
+        featurePricing: featurePricing ?? this.featurePricing,
+        preferredStoreId:
+            (preferredStoreId ?? Nullable(this.preferredStoreId)).value,
         viewOrdering: viewOrdering ?? this.viewOrdering,
         description: description ?? this.description,
         link: link ?? this.link,
@@ -102,6 +114,8 @@ class Household extends Model {
         language,
         featurePlanner,
         featureExpenses,
+        featurePricing,
+        preferredStoreId,
         viewOrdering,
         member,
         defaultShoppingList,
@@ -128,6 +142,10 @@ class Household extends Model {
     if (featureExpenses != null) {
       data['expenses_feature'] = featureExpenses;
     }
+    if (featurePricing != null) {
+      data['pricing_feature'] = featurePricing;
+    }
+    data['preferred_store_id'] = preferredStoreId;
     if (viewOrdering != null) {
       data['view_ordering'] = viewOrdering!.map((e) => e.toString()).toList()
         ..remove(ViewsEnum.more.toString());

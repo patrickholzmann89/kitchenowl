@@ -24,3 +24,11 @@ class RemovePlannedRecipe(Schema):
     day = fields.Integer(
         validate=Range(min=0, min_inclusive=True, max=6, max_inclusive=True)
     )
+
+
+class GetPlannerCost(Schema):
+    class Meta:
+        unknown = EXCLUDE
+
+    start = fields.Integer(required=True)
+    end = fields.Integer(required=True)

@@ -9,6 +9,7 @@ import 'package:kitchenowl/models/planner.dart';
 import 'package:kitchenowl/models/recipe.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/services/api/api_service.dart';
+import 'package:kitchenowl/services/api/pricing.dart';
 import 'package:kitchenowl/services/transaction_handler.dart';
 import 'package:kitchenowl/services/transactions/household.dart';
 import 'package:kitchenowl/services/transactions/planner.dart';
@@ -45,6 +46,20 @@ class RecipeCubit extends Cubit<RecipeState> {
     emit(state.copyWith(
       selectedYields: selectedYields,
     ));
+    _refreshCost();
+  }
+
+  Future<void> _refreshCost() async {
+    if (state.household == null ||
+        !(state.household!.featurePricing ?? false)) {
+      emit(state.copyWith(costEstimate: CostEstimate.unavailable));
+      return;
+    }
+    final cost = await ApiService.getInstance().getRecipeCost(
+      state.recipe,
+      yields: state.selectedYields,
+    );
+    emit(state.copyWith(costEstimate: cost));
   }
 
   void setUpdateState(UpdateEnum updateState) {
@@ -95,6 +110,7 @@ class RecipeCubit extends Cubit<RecipeState> {
       household: (await household) ?? state.household,
       inHouseholdRecipe: inHouseholdRecipe,
     ));
+    _refreshCost();
   }
 
   Future<void> addItemsToList([ShoppingList? shoppingList]) async {
@@ -156,6 +172,7 @@ final class RecipeState extends Equatable {
   final List<ShoppingList> shoppingLists;
   final Household? household;
   final Recipe? inHouseholdRecipe;
+  final CostEstimate costEstimate;
 
   RecipeState.custom({
     required this.recipe,
@@ -165,6 +182,7 @@ final class RecipeState extends Equatable {
     this.shoppingLists = const [],
     this.household,
     this.inHouseholdRecipe,
+    this.costEstimate = CostEstimate.unavailable,
   }) : dynamicRecipe = recipe.withYields(selectedYields);
 
   RecipeState({
@@ -174,6 +192,7 @@ final class RecipeState extends Equatable {
     this.shoppingLists = const [],
     this.household,
     this.inHouseholdRecipe,
+    this.costEstimate = CostEstimate.unavailable,
   })  : selectedYields = selectedYields,
         dynamicRecipe = recipe.withYields(selectedYields),
         selectedItems =
@@ -187,6 +206,7 @@ final class RecipeState extends Equatable {
     List<ShoppingList>? shoppingLists,
     Household? household,
     Recipe? inHouseholdRecipe,
+    CostEstimate? costEstimate,
   }) =>
       RecipeState.custom(
         recipe: recipe ?? this.recipe,
@@ -196,6 +216,7 @@ final class RecipeState extends Equatable {
         updateState: updateState ?? this.updateState,
         household: household ?? this.household,
         inHouseholdRecipe: inHouseholdRecipe ?? this.inHouseholdRecipe,
+        costEstimate: costEstimate ?? this.costEstimate,
       );
 
   @override
@@ -208,6 +229,7 @@ final class RecipeState extends Equatable {
         updateState,
         household,
         inHouseholdRecipe,
+        costEstimate,
       ];
 
   bool get isOwningHousehold =>

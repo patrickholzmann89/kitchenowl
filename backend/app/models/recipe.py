@@ -367,6 +367,8 @@ class RecipeItems(Model):
     )
     description: Mapped[str] = db.Column("description", db.String())
     optional: Mapped[bool] = db.Column("optional", db.Boolean)
+    amount: Mapped[float | None] = db.Column(db.Float, nullable=True)
+    unit: Mapped[str | None] = db.Column(db.String(16), nullable=True)
 
     item: Mapped["Item"] = cast(
         Mapped["Item"],
@@ -392,6 +394,8 @@ class RecipeItems(Model):
         res = self.item.obj_to_dict()
         res["description"] = getattr(self, "description")
         res["optional"] = getattr(self, "optional")
+        res["amount"] = getattr(self, "amount")
+        res["unit"] = getattr(self, "unit")
         res["created_at"] = getattr(self, "created_at")
         res["updated_at"] = getattr(self, "updated_at")
         return res
@@ -403,6 +407,8 @@ class RecipeItems(Model):
                 "id": getattr(self, "item_id"),
                 "description": getattr(self, "description"),
                 "optional": getattr(self, "optional"),
+                "amount": getattr(self, "amount"),
+                "unit": getattr(self, "unit"),
             }
         ]
         return res

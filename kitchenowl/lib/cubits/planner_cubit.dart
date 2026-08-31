@@ -5,6 +5,8 @@ import 'package:kitchenowl/models/item.dart';
 import 'package:kitchenowl/models/planner.dart';
 import 'package:kitchenowl/models/recipe.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
+import 'package:kitchenowl/services/api/api_service.dart';
+import 'package:kitchenowl/services/api/pricing.dart';
 import 'package:kitchenowl/services/transaction_handler.dart';
 import 'package:kitchenowl/services/transactions/planner.dart';
 import 'package:kitchenowl/services/transactions/shoppinglist.dart';
@@ -52,10 +54,19 @@ class PlannerCubit extends Cubit<PlannerCubitState> {
       household: household,
     ));
 
+    final costEstimate = (household.featurePricing ?? false)
+        ? await ApiService.getInstance().getPlannerCost(
+            household,
+            DateTime.now(),
+            DateTime.now().add(const Duration(days: 7)),
+          )
+        : CostEstimate.unavailable;
+
     emit(LoadedPlannerCubitState(
       await planned,
       await recent,
       await suggested,
+      costEstimate,
     ));
     _refreshLock = false;
   }
@@ -99,27 +110,34 @@ class LoadedPlannerCubitState extends PlannerCubitState {
   final List<RecipePlan> recipePlans;
   final List<Recipe> recentRecipes;
   final List<Recipe> suggestedRecipes;
+  final CostEstimate costEstimate;
 
   const LoadedPlannerCubitState([
     this.recipePlans = const [],
     this.recentRecipes = const [],
     this.suggestedRecipes = const [],
+    this.costEstimate = CostEstimate.unavailable,
   ]);
 
   @override
   List<Object?> get props =>
-      recipePlans.cast<Object?>() + recentRecipes + suggestedRecipes;
+      recipePlans.cast<Object?>() +
+      recentRecipes +
+      suggestedRecipes +
+      [costEstimate];
 
   LoadedPlannerCubitState copyWith({
     List<RecipePlan>? recipePlans,
     Map<int, List<Recipe>>? plannedRecipeDayMap,
     List<Recipe>? recentRecipes,
     List<Recipe>? suggestedRecipes,
+    CostEstimate? costEstimate,
   }) =>
       LoadedPlannerCubitState(
         recipePlans ?? this.recipePlans,
         recentRecipes ?? this.recentRecipes,
         suggestedRecipes ?? this.suggestedRecipes,
+        costEstimate ?? this.costEstimate,
       );
 
   List<RecipePlan> getPlannedWithoutDay() {

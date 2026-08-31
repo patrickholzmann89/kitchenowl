@@ -5,7 +5,9 @@ import 'package:kitchenowl/models/expense_category.dart';
 import 'package:kitchenowl/models/household.dart';
 import 'package:kitchenowl/models/import_settings.dart';
 import 'package:kitchenowl/models/member.dart';
+import 'package:kitchenowl/models/nullable.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
+import 'package:kitchenowl/models/store.dart';
 import 'package:kitchenowl/models/tag.dart';
 import 'package:kitchenowl/services/api/api_service.dart';
 
@@ -21,6 +23,8 @@ class HouseholdUpdateCubit
           image: household.image,
           featureExpenses: household.featureExpenses ?? true,
           featurePlanner: household.featurePlanner ?? true,
+          featurePricing: household.featurePricing ?? true,
+          preferredStoreId: household.preferredStoreId,
           viewOrdering: household.viewOrdering ?? ViewsEnum.values,
           language: household.language,
           description: household.description ?? "",
@@ -62,6 +66,8 @@ class HouseholdUpdateCubit
         ApiService.getInstance().getCategories(this.household);
     Future<List<ExpenseCategory>?> expenseCategories =
         ApiService.getInstance().getExpenseCategories(this.household);
+    Future<List<Store>?> stores =
+        ApiService.getInstance().getStores(this.household);
 
     Household household = await fHousehold ?? this.household;
 
@@ -69,6 +75,8 @@ class HouseholdUpdateCubit
       name: household.name,
       featureExpenses: household.featureExpenses ?? true,
       featurePlanner: household.featurePlanner ?? true,
+      featurePricing: household.featurePricing ?? true,
+      preferredStoreId: household.preferredStoreId,
       viewOrdering: household.viewOrdering ?? ViewsEnum.values,
       language: household.language,
       image: household.image,
@@ -76,6 +84,7 @@ class HouseholdUpdateCubit
       tags: await tags ?? {},
       categories: await categories ?? const [],
       expenseCategories: await expenseCategories ?? const [],
+      stores: await stores ?? const [],
       supportedLanguages: state.supportedLanguages,
       link: household.link ?? "",
       description: household.description ?? "",
@@ -141,10 +150,44 @@ class HouseholdUpdateCubit
       language: state.language,
       featureExpenses: state.featureExpenses,
       featurePlanner: state.featurePlanner,
+      featurePricing: state.featurePricing,
+      preferredStoreId: Nullable(state.preferredStoreId),
       viewOrdering: state.viewOrdering,
       link: state.link,
       description: state.description,
     ));
+  }
+
+  void setFeaturePricing(bool value) {
+    emit(state.copyWith(featurePricing: value));
+    saveHousehold();
+  }
+
+  void setPreferredStore(Store? store) {
+    emit(state.copyWith(preferredStoreId: Nullable(store?.id)));
+    saveHousehold();
+  }
+
+  Future<bool> addStore(String name) async {
+    final res =
+        await ApiService.getInstance().addStore(household, Store(name: name));
+    refresh();
+
+    return res;
+  }
+
+  Future<bool> updateStore(Store store) async {
+    final res = await ApiService.getInstance().updateStore(store);
+    refresh();
+
+    return res;
+  }
+
+  Future<bool> deleteStore(Store store) async {
+    final res = await ApiService.getInstance().deleteStore(store);
+    refresh();
+
+    return res;
   }
 
   Future<bool> addTag(String name) async {
@@ -313,6 +356,9 @@ class HouseholdUpdateState extends HouseholdAddUpdateState {
   final Set<Tag> tags;
   final List<Category> categories;
   final List<ExpenseCategory> expenseCategories;
+  final bool featurePricing;
+  final int? preferredStoreId;
+  final List<Store> stores;
   final String link;
   final String description;
 
@@ -324,12 +370,15 @@ class HouseholdUpdateState extends HouseholdAddUpdateState {
     super.language,
     super.featurePlanner = true,
     super.featureExpenses = true,
+    this.featurePricing = true,
+    this.preferredStoreId,
     super.viewOrdering = ViewsEnum.values,
     super.supportedLanguages,
     this.shoppingLists = const [],
     this.tags = const {},
     this.categories = const [],
     this.expenseCategories = const [],
+    this.stores = const [],
   });
 
   HouseholdUpdateState copyWith({
@@ -338,6 +387,8 @@ class HouseholdUpdateState extends HouseholdAddUpdateState {
     String? language,
     bool? featurePlanner,
     bool? featureExpenses,
+    bool? featurePricing,
+    Nullable<int>? preferredStoreId,
     List<ViewsEnum>? viewOrdering,
     Map<String, String>? supportedLanguages,
     List<Member>? member,
@@ -345,6 +396,7 @@ class HouseholdUpdateState extends HouseholdAddUpdateState {
     Set<Tag>? tags,
     List<Category>? categories,
     List<ExpenseCategory>? expenseCategories,
+    List<Store>? stores,
     String? link,
     String? description,
   }) =>
@@ -354,12 +406,16 @@ class HouseholdUpdateState extends HouseholdAddUpdateState {
         language: language ?? this.language,
         featurePlanner: featurePlanner ?? this.featurePlanner,
         featureExpenses: featureExpenses ?? this.featureExpenses,
+        featurePricing: featurePricing ?? this.featurePricing,
+        preferredStoreId:
+            (preferredStoreId ?? Nullable(this.preferredStoreId)).value,
         viewOrdering: viewOrdering ?? this.viewOrdering,
         supportedLanguages: supportedLanguages ?? this.supportedLanguages,
         shoppingLists: shoppingLists ?? this.shoppingLists,
         tags: tags ?? this.tags,
         categories: categories ?? this.categories,
         expenseCategories: expenseCategories ?? this.expenseCategories,
+        stores: stores ?? this.stores,
         link: link ?? this.link,
         description: description ?? this.description,
       );
@@ -373,6 +429,9 @@ class HouseholdUpdateState extends HouseholdAddUpdateState {
         tags,
         categories,
         expenseCategories,
+        featurePricing,
+        preferredStoreId,
+        stores,
         link,
         description,
       ];
@@ -384,6 +443,8 @@ class LoadingHouseholdUpdateState extends HouseholdUpdateState {
     super.image,
     super.featureExpenses,
     super.featurePlanner,
+    super.featurePricing,
+    super.preferredStoreId,
     super.viewOrdering,
     super.language,
     super.supportedLanguages,
@@ -398,6 +459,8 @@ class LoadingHouseholdUpdateState extends HouseholdUpdateState {
     String? language,
     bool? featurePlanner,
     bool? featureExpenses,
+    bool? featurePricing,
+    Nullable<int>? preferredStoreId,
     List<ViewsEnum>? viewOrdering,
     Map<String, String>? supportedLanguages,
     List<Member>? member,
@@ -405,6 +468,7 @@ class LoadingHouseholdUpdateState extends HouseholdUpdateState {
     Set<Tag>? tags,
     List<Category>? categories,
     List<ExpenseCategory>? expenseCategories,
+    List<Store>? stores,
     String? link,
     String? description,
   }) =>
@@ -414,6 +478,9 @@ class LoadingHouseholdUpdateState extends HouseholdUpdateState {
         language: language ?? this.language,
         featurePlanner: featurePlanner ?? this.featurePlanner,
         featureExpenses: featureExpenses ?? this.featureExpenses,
+        featurePricing: featurePricing ?? this.featurePricing,
+        preferredStoreId:
+            (preferredStoreId ?? Nullable(this.preferredStoreId)).value,
         viewOrdering: viewOrdering ?? this.viewOrdering,
         supportedLanguages: supportedLanguages ?? this.supportedLanguages,
         link: link ?? this.link,

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped
 
 Model = db.Model
 if TYPE_CHECKING:
-    from app.models import Household, RecipeItems, ShoppinglistItems
+    from app.models import Household, RecipeItems, ShoppinglistItems, ItemPrice
     from app.helpers.db_model_base import DbModelBase
 
     Model = DbModelBase
@@ -57,6 +57,14 @@ class Item(Model, DbModelAuthorizeMixin):
         Mapped[List["ShoppinglistItems"]],
         db.relationship(
             "ShoppinglistItems",
+            back_populates="item",
+            cascade="all, delete-orphan",
+        ),
+    )
+    prices: Mapped[List["ItemPrice"]] = cast(
+        Mapped[List["ItemPrice"]],
+        db.relationship(
+            "ItemPrice",
             back_populates="item",
             cascade="all, delete-orphan",
         ),
@@ -116,6 +124,7 @@ class Item(Model, DbModelAuthorizeMixin):
         from app.models import RecipeItems
         from app.models import History
         from app.models import ShoppinglistItems
+        from app.models import ItemPrice
 
         if not self.default_key and other.default_key:
             self.default_key = other.default_key
@@ -157,6 +166,18 @@ class Item(Model, DbModelAuthorizeMixin):
         for history in History.query.filter(History.item_id == other.id).all():
             history.item_id = self.id
             db.session.add(history)
+
+        for ip in ItemPrice.query.filter(ItemPrice.item_id == other.id).all():
+            ip: ItemPrice
+            existingIp = ItemPrice.find_by_item_store(self.id, ip.store_id)
+            if not existingIp:
+                ip.item_id = self.id
+                db.session.add(ip)
+            else:
+                # Unlike descriptions there's no sane numeric "merge" of two
+                # absolute prices - the target item's price wins and the
+                # merged-away item's duplicate row for that store is dropped.
+                db.session.delete(ip)
 
         try:
             db.session.add(self)

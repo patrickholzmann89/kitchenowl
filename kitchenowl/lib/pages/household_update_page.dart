@@ -1,13 +1,16 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kitchenowl/cubits/household_add_update/household_update_cubit.dart';
 import 'package:kitchenowl/helpers/debouncer.dart';
 import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/household.dart';
+import 'package:kitchenowl/models/store.dart';
 import 'package:kitchenowl/pages/settings_household/household_settings_category_page.dart';
 import 'package:kitchenowl/pages/settings_household/household_settings_items_page.dart';
 import 'package:kitchenowl/widgets/settings_household/sliver_household_danger_zone.dart';
 import 'package:kitchenowl/pages/settings_household/household_settings_expense_category_page.dart';
+import 'package:kitchenowl/pages/settings_household/household_settings_store_page.dart';
 import 'package:kitchenowl/widgets/settings_household/sliver_household_feature_settings.dart';
 import 'package:kitchenowl/pages/settings_household/household_settings_shoppinglist_page.dart';
 import 'package:kitchenowl/pages/settings_household/household_settings_tags_page.dart';
@@ -242,7 +245,87 @@ class _HouseholdUpdatePageState extends State<HouseholdUpdatePage> {
                               ),
                             ),
                           ),
-                        )
+                        ),
+                      if (true)
+                        ListTile(
+                          title: Text(AppLocalizations.of(context)!.stores),
+                          leading: const Icon(Icons.store_rounded),
+                          trailing: const Icon(Icons.arrow_forward_ios_rounded),
+                          contentPadding:
+                              const EdgeInsets.only(left: 16, right: 16),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => BlocProvider.value(
+                                value: cubit,
+                                child: HouseholdSettingsStorePage(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      BlocBuilder<HouseholdUpdateCubit, HouseholdUpdateState>(
+                        buildWhen: (prev, curr) =>
+                            prev.featurePricing != curr.featurePricing,
+                        builder: (context, state) => SwitchListTile(
+                          title: Text(
+                              AppLocalizations.of(context)!.pricingFeature),
+                          secondary: const Icon(Icons.sell_rounded),
+                          contentPadding:
+                              const EdgeInsets.only(left: 16, right: 16),
+                          value: state.featurePricing,
+                          onChanged: (value) =>
+                              BlocProvider.of<HouseholdUpdateCubit>(context)
+                                  .setFeaturePricing(value),
+                        ),
+                      ),
+                      if (true)
+                        BlocBuilder<HouseholdUpdateCubit, HouseholdUpdateState>(
+                          buildWhen: (prev, curr) =>
+                              prev.featurePricing != curr.featurePricing ||
+                              prev.preferredStoreId != curr.preferredStoreId ||
+                              prev.stores != curr.stores,
+                          builder: (context, state) {
+                            if (!state.featurePricing) {
+                              return const SizedBox.shrink();
+                            }
+                            final selected = state.stores
+                                .where((s) => s.id == state.preferredStoreId)
+                                .firstOrNull;
+                            return ListTile(
+                              title: Text(
+                                  AppLocalizations.of(context)!.preferredStore),
+                              leading: const Icon(Icons.storefront_rounded),
+                              trailing: Text(selected?.name ??
+                                  AppLocalizations.of(context)!.none),
+                              contentPadding:
+                                  const EdgeInsets.only(left: 16, right: 16),
+                              onTap: state.stores.isEmpty
+                                  ? null
+                                  : () async {
+                                      final store = await showDialog<Store?>(
+                                        context: context,
+                                        builder: (context) => SelectDialog(
+                                          title: AppLocalizations.of(context)!
+                                              .preferredStore,
+                                          cancelText:
+                                              AppLocalizations.of(context)!
+                                                  .cancel,
+                                          options: state.stores
+                                              .map((e) => SelectDialogOption(
+                                                    e,
+                                                    e.name,
+                                                  ))
+                                              .toList(),
+                                        ),
+                                      );
+                                      if (store != null) {
+                                        BlocProvider.of<HouseholdUpdateCubit>(
+                                                context)
+                                            .setPreferredStore(store);
+                                      }
+                                    },
+                            );
+                          },
+                        ),
                     ]),
                   ),
                 ),
