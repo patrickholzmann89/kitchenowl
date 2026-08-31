@@ -118,15 +118,43 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
                               .toList(),
                         ),
                   right: Padding(
-                    padding: const EdgeInsets.only(right: 16, bottom: 6),
-                    child: TrailingIconTextButton(
-                      onPressed: cubit.incrementSorting,
-                      text: state.sorting == ShoppinglistSorting.alphabetical
-                          ? AppLocalizations.of(context)!.sortingAlphabetical
-                          : state.sorting == ShoppinglistSorting.algorithmic
-                              ? AppLocalizations.of(context)!.sortingAlgorithmic
-                              : AppLocalizations.of(context)!.category,
-                      icon: const Icon(Icons.sort),
+                    padding: const EdgeInsets.only(right: 8, bottom: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: context.watch<SettingsCubit>().state
+                                  .shoppingListShowPhotos
+                              ? AppLocalizations.of(context)!.showIcons
+                              : AppLocalizations.of(context)!.showPhotos,
+                          icon: Icon(
+                            context.watch<SettingsCubit>().state
+                                    .shoppingListShowPhotos
+                                ? Icons.category_outlined
+                                : Icons.photo_outlined,
+                          ),
+                          onPressed: () => BlocProvider.of<SettingsCubit>(
+                            context,
+                          ).setShoppingListShowPhotos(
+                            !context
+                                .read<SettingsCubit>()
+                                .state
+                                .shoppingListShowPhotos,
+                          ),
+                        ),
+                        TrailingIconTextButton(
+                          onPressed: cubit.incrementSorting,
+                          text: state.sorting ==
+                                  ShoppinglistSorting.alphabetical
+                              ? AppLocalizations.of(context)!.sortingAlphabetical
+                              : state.sorting ==
+                                      ShoppinglistSorting.algorithmic
+                                  ? AppLocalizations.of(context)!
+                                      .sortingAlgorithmic
+                                  : AppLocalizations.of(context)!.category,
+                          icon: const Icon(Icons.sort),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -159,7 +187,9 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
                       previous.shoppingListListView !=
                           current.shoppingListListView ||
                       previous.listStyle != current.listStyle ||
-                      previous.gridSize != current.gridSize,
+                      previous.gridSize != current.gridSize ||
+                      previous.shoppingListShowPhotos !=
+                          current.shoppingListShowPhotos,
                   builder: (context, settingsState) => PageTransitionSwitcher(
                     transitionBuilder: (
                       Widget child,
@@ -184,6 +214,8 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
                                     listStyle: settingsState.listStyle,
                                     isList: settingsState.shoppingListListView,
                                     gridSize: settingsState.gridSize,
+                                    showPhotos:
+                                        settingsState.shoppingListShowPhotos,
                                   ),
                                   items: state.result,
                                   categories: state.categories,
@@ -244,6 +276,8 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
                                         isList:
                                             settingsState.shoppingListListView,
                                         gridSize: settingsState.gridSize,
+                                        showPhotos: settingsState
+                                            .shoppingListShowPhotos,
                                       ),
                                       categories: state.categories,
                                       isLoading: state

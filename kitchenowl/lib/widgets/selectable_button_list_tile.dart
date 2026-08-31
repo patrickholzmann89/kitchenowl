@@ -4,6 +4,7 @@ import 'package:kitchenowl/styles/dynamic.dart';
 class SelectableButtonListTile extends StatefulWidget {
   final String title;
   final IconData? icon;
+  final ImageProvider<Object>? image;
   final String? description;
   final bool selected;
   final bool raised;
@@ -16,6 +17,7 @@ class SelectableButtonListTile extends StatefulWidget {
     super.key,
     required this.title,
     this.icon,
+    this.image,
     this.description,
     required this.selected,
     this.onPressed,
@@ -49,12 +51,20 @@ class _SelectableButtonListTileState extends State<SelectableButtonListTile> {
       child: ListTile(
         leading: widget.selected
             ? const Icon(Icons.check_rounded)
-            : widget.icon != null
-                ? Icon(widget.icon,
-                    color: !widget.raised
-                        ? Theme.of(context).iconTheme.color!.withAlpha(85)
-                        : Theme.of(context).iconTheme.color!.withAlpha(170))
-                : null,
+            : widget.image != null
+                ? CircleAvatar(
+                    backgroundImage: widget.image,
+                    backgroundColor: Colors.transparent,
+                  )
+                : widget.icon != null
+                    ? Icon(widget.icon,
+                        color: !widget.raised
+                            ? Theme.of(context).iconTheme.color!.withAlpha(85)
+                            : Theme.of(context)
+                                .iconTheme
+                                .color!
+                                .withAlpha(170))
+                    : null,
         title: Text(
           widget.title,
           maxLines: 1,

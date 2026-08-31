@@ -16,7 +16,7 @@ import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/models/update_value.dart';
 import 'package:kitchenowl/pages/aldi_search_page.dart';
-import 'package:kitchenowl/widgets/image_provider.dart';
+import 'package:kitchenowl/widgets/image_selector.dart';
 import 'package:kitchenowl/widgets/item_popup_menu_button.dart';
 import 'package:kitchenowl/widgets/item_price_dialog.dart';
 import 'package:kitchenowl/widgets/item_wrap_menu.dart';
@@ -121,28 +121,28 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                   if (widget.item is! RecipeItem)
                     BlocBuilder<ItemEditCubit, ItemEditState>(
                       bloc: cubit,
-                      buildWhen: (prev, curr) => prev.photo != curr.photo,
-                      builder: (context, state) => state.photo == null
-                          ? const SliverToBoxAdapter()
-                          : SliverPadding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                              sliver: SliverToBoxAdapter(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: AspectRatio(
-                                    aspectRatio: 16 / 9,
-                                    child: Image(
-                                      image: getImageProvider(
-                                        context,
-                                        state.photo!,
-                                      ),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
+                      buildWhen: (prev, curr) =>
+                          prev.photo != curr.photo ||
+                          prev.pendingPhoto != curr.pendingPhoto,
+                      builder: (context, state) => SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        sliver: SliverToBoxAdapter(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: SizedBox(
+                              width: 160,
+                              child: ImageSelector(
+                                padding: EdgeInsets.zero,
+                                image: state.pendingPhoto,
+                                originalImage: state.photo,
+                                tooltip:
+                                    AppLocalizations.of(context)!.imageSelect,
+                                setImage: cubit.setPendingPhoto,
                               ),
                             ),
+                          ),
+                        ),
+                      ),
                     ),
                   if (widget.item is ItemWithDescription)
                     SliverPadding(

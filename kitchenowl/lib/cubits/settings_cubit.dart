@@ -33,6 +33,8 @@ class SettingsCubit extends Cubit<SettingsState> {
         .readBool(key: 'restoreLastShoppingList');
     final shoppingListKeepAwake = PreferenceStorage.getInstance()
         .readBool(key: 'shoppingListKeepAwake');
+    final shoppingListShowPhotos = PreferenceStorage.getInstance()
+        .readBool(key: 'shoppingListShowPhotos');
 
     Config.deviceInfo = DeviceInfoPlugin().deviceInfo;
     Config.packageInfo = PackageInfo.fromPlatform();
@@ -59,6 +61,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       recentItemsCategorize: await recentItemsCategorize ?? false,
       restoreLastShoppingList: await restoreLastShoppingList ?? false,
       shoppingListKeepAwake: await shoppingListKeepAwake ?? false,
+      shoppingListShowPhotos: await shoppingListShowPhotos ?? false,
     ));
   }
 
@@ -142,6 +145,14 @@ class SettingsCubit extends Cubit<SettingsState> {
     );
     emit(state.copyWith(shoppingListKeepAwake: shoppingListKeepAwake));
   }
+
+  void setShoppingListShowPhotos(bool shoppingListShowPhotos) {
+    PreferenceStorage.getInstance().writeBool(
+      key: 'shoppingListShowPhotos',
+      value: shoppingListShowPhotos,
+    );
+    emit(state.copyWith(shoppingListShowPhotos: shoppingListShowPhotos));
+  }
 }
 
 class SettingsState extends Equatable {
@@ -156,6 +167,7 @@ class SettingsState extends Equatable {
   final bool recentItemsCategorize;
   final bool restoreLastShoppingList;
   final bool shoppingListKeepAwake;
+  final bool shoppingListShowPhotos;
 
   const SettingsState({
     this.themeMode = ThemeMode.system,
@@ -169,6 +181,7 @@ class SettingsState extends Equatable {
     this.recentItemsCategorize = false,
     this.restoreLastShoppingList = false,
     this.shoppingListKeepAwake = false,
+    this.shoppingListShowPhotos = false,
   });
 
   SettingsState copyWith({
@@ -183,6 +196,7 @@ class SettingsState extends Equatable {
     bool? recentItemsCategorize,
     bool? restoreLastShoppingList,
     bool? shoppingListKeepAwake,
+    bool? shoppingListShowPhotos,
   }) =>
       SettingsState(
         themeMode: themeMode ?? this.themeMode,
@@ -200,6 +214,8 @@ class SettingsState extends Equatable {
             restoreLastShoppingList ?? this.restoreLastShoppingList,
         shoppingListKeepAwake:
             shoppingListKeepAwake ?? this.shoppingListKeepAwake,
+        shoppingListShowPhotos:
+            shoppingListShowPhotos ?? this.shoppingListShowPhotos,
       );
 
   @override
@@ -215,5 +231,6 @@ class SettingsState extends Equatable {
         recentItemsCategorize,
         restoreLastShoppingList,
         shoppingListKeepAwake,
+        shoppingListShowPhotos,
       ];
 }

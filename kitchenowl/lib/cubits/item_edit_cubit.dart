@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kitchenowl/helpers/named_bytearray.dart';
 import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/category.dart';
 import 'package:kitchenowl/models/household.dart';
@@ -87,6 +88,22 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
   }
 
   Future<void> saveItem() async {
+    if (state.pendingPhoto != null) {
+      final pendingPhoto = state.pendingPhoto!;
+      if (pendingPhoto.isEmpty) {
+        emit(state.copyWith(
+          photo: const Nullable(null),
+          pendingPhoto: const Nullable(null),
+        ));
+      } else {
+        final uploaded =
+            await ApiService.getInstance().uploadBytes(pendingPhoto);
+        emit(state.copyWith(
+          photo: Nullable(uploaded ?? _item.photo),
+          pendingPhoto: const Nullable(null),
+        ));
+      }
+    }
     if (shoppingList != null &&
         (state.hasChangedDescription(_item) || state.hasChangedAmount(_item))) {
       await TransactionHandler.getInstance()
@@ -170,6 +187,10 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
     emit(state.copyWith(photo: Nullable(photo)));
   }
 
+  void setPendingPhoto(NamedByteArray photo) {
+    emit(state.copyWith(pendingPhoto: Nullable(photo)));
+  }
+
   Future<bool> addOrUpdateItemPrice(ItemPrice price) async {
     if (_item.id == null) return false;
     final res =
@@ -199,6 +220,7 @@ class ItemEditState extends Equatable {
   final String? unit;
   final double? pieceWeight;
   final String? photo;
+  final NamedByteArray? pendingPhoto;
   final List<ItemPrice> prices;
   final List<Store> stores;
 
@@ -213,6 +235,7 @@ class ItemEditState extends Equatable {
     this.unit,
     this.pieceWeight,
     this.photo,
+    this.pendingPhoto,
     this.prices = const [],
     this.stores = const [],
   });
@@ -228,6 +251,7 @@ class ItemEditState extends Equatable {
     Nullable<String>? unit,
     Nullable<double>? pieceWeight,
     Nullable<String>? photo,
+    Nullable<NamedByteArray>? pendingPhoto,
     List<ItemPrice>? prices,
     List<Store>? stores,
   }) =>
@@ -242,6 +266,7 @@ class ItemEditState extends Equatable {
         unit: (unit ?? Nullable(this.unit)).value,
         pieceWeight: (pieceWeight ?? Nullable(this.pieceWeight)).value,
         photo: (photo ?? Nullable(this.photo)).value,
+        pendingPhoto: (pendingPhoto ?? Nullable(this.pendingPhoto)).value,
         prices: prices ?? this.prices,
         stores: stores ?? this.stores,
       );
@@ -258,6 +283,7 @@ class ItemEditState extends Equatable {
         unit,
         pieceWeight,
         photo,
+        pendingPhoto,
         prices,
         stores,
       ];
@@ -273,6 +299,7 @@ class ItemEditState extends Equatable {
       comparedTo.name != name ||
       comparedTo.pieceWeight != pieceWeight ||
       comparedTo.photo != photo ||
+      pendingPhoto != null ||
       hasMerged;
 
   bool hasChangedDescription(Item comparedTo) {

@@ -20,6 +20,7 @@ class ShoppingListStyle {
   final bool? allRaised;
   final GridSize gridSize;
   final ListStyle listStyle;
+  final bool showPhotos;
 
   const ShoppingListStyle({
     this.advancedItemView = false,
@@ -27,5 +28,6 @@ class ShoppingListStyle {
     this.allRaised,
     this.gridSize = GridSize.normal,
     this.listStyle = ListStyle.cards,
+    this.showPhotos = false,
   });
 }
