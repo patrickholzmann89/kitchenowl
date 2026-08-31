@@ -28,6 +28,7 @@ class HouseholdSettingsItemsCubit extends Cubit<HouseholdSettingsItemsState> {
         items: (await items)!,
         categories: await categories,
         sorting: state.sorting,
+        query: state.query,
       ));
     }
   }
@@ -43,6 +44,10 @@ class HouseholdSettingsItemsCubit extends Cubit<HouseholdSettingsItemsState> {
       ShoppinglistSorting.sortShoppinglistItems(state.items, sorting);
     }
     emit(state.copyWith(sorting: sorting));
+  }
+
+  void search(String query) {
+    emit(state.copyWith(query: query));
   }
 
   Future<void> deleteItem(Item item) async {
@@ -76,34 +81,46 @@ class HouseholdSettingsItemsState extends Equatable {
   final List<Item> items;
   final List<Category> categories;
   final ShoppinglistSorting sorting;
+  final String query;
 
   const HouseholdSettingsItemsState({
     this.items = const [],
     this.categories = const [],
     this.sorting = ShoppinglistSorting.alphabetical,
+    this.query = '',
   });
+
+  List<Item> get filteredItems => query.isEmpty
+      ? items
+      : items
+          .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
+          .toList();
 
   HouseholdSettingsItemsState copyWith({
     ShoppinglistSorting? sorting,
+    String? query,
   }) =>
       HouseholdSettingsItemsState(
         items: this.items,
         categories: this.categories,
         sorting: sorting ?? this.sorting,
+        query: query ?? this.query,
       );
 
   @override
-  List<Object?> get props => [items, categories, sorting];
+  List<Object?> get props => [items, categories, sorting, query];
 }
 
 class LoadingHouseholdSettingsItemsState extends HouseholdSettingsItemsState {
-  const LoadingHouseholdSettingsItemsState({super.sorting});
+  const LoadingHouseholdSettingsItemsState({super.sorting, super.query});
 
   @override
   HouseholdSettingsItemsState copyWith({
     ShoppinglistSorting? sorting,
+    String? query,
   }) =>
       LoadingHouseholdSettingsItemsState(
         sorting: sorting ?? this.sorting,
+        query: query ?? this.query,
       );
 }

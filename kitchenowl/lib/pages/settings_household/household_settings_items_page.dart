@@ -26,6 +26,7 @@ class HouseholdSettingsItemsPage extends StatefulWidget {
 class _HouseholdSettingsItemsPageState
     extends State<HouseholdSettingsItemsPage> {
   late HouseholdSettingsItemsCubit cubit;
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
@@ -36,6 +37,7 @@ class _HouseholdSettingsItemsPageState
   @override
   void dispose() {
     cubit.close();
+    searchController.dispose();
     super.dispose();
   }
 
@@ -49,13 +51,14 @@ class _HouseholdSettingsItemsPageState
           bloc: cubit,
           builder: (context, state) {
             dynamic body;
+            final filteredItems = state.filteredItems;
 
             if (state.sorting != ShoppinglistSorting.category ||
                 state is LoadingHouseholdSettingsItemsState &&
-                    state.items.isEmpty) {
+                    filteredItems.isEmpty) {
               body = SliverItemGridList(
                 isLoading: state is LoadingHouseholdSettingsItemsState,
-                items: state.items,
+                items: filteredItems,
                 categories: state.categories,
                 onRefresh: cubit.refresh,
                 extraOption: _itemPopmenuBuilder,
@@ -70,8 +73,9 @@ class _HouseholdSettingsItemsPageState
               for (int i = 0; i < state.categories.length + 1; i++) {
                 Category? category =
                     i < state.categories.length ? state.categories[i] : null;
-                final List<Item> items =
-                    state.items.where((e) => e.category == category).toList();
+                final List<Item> items = filteredItems
+                    .where((e) => e.category == category)
+                    .toList();
                 if (items.isEmpty) continue;
 
                 grids.add(SliverCategoryItemGridList(
@@ -96,6 +100,28 @@ class _HouseholdSettingsItemsPageState
                 SliverAppBar(
                   title: Text(AppLocalizations.of(context)!.items),
                   floating: true,
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                    child: BlocListener<HouseholdSettingsItemsCubit,
+                        HouseholdSettingsItemsState>(
+                      bloc: cubit,
+                      listener: (context, state) {
+                        if (state.query.isEmpty &&
+                            searchController.text.isNotEmpty) {
+                          searchController.clear();
+                        }
+                      },
+                      listenWhen: (previous, current) =>
+                          previous.query != current.query,
+                      child: SearchTextField(
+                        controller: searchController,
+                        onSearch: (s) async => cubit.search(s),
+                        clearOnSubmit: false,
+                      ),
+                    ),
+                  ),
                 ),
                 SliverToBoxAdapter(
                   child: LeftRightWrap(
