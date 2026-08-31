@@ -1,0 +1,1 @@
+from .receipt_controller import receiptHousehold

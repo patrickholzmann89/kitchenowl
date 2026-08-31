@@ -2,6 +2,7 @@ from .auth import *
 from .item import *
 from .user import *
 from .recipe import *
+from .receipt import *
 from .shoppinglist import *
 from .planner import *
 from .onboarding import *

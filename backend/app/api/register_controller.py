@@ -27,6 +27,9 @@ api.household.register_blueprint(
     api.recipeHousehold, url_prefix="/<int:household_id>/recipe"
 )
 api.household.register_blueprint(
+    api.receiptHousehold, url_prefix="/<int:household_id>/receipt"
+)
+api.household.register_blueprint(
     api.shoppinglistHousehold, url_prefix="/<int:household_id>/shoppinglist"
 )
 api.household.register_blueprint(api.tagHousehold, url_prefix="/<int:household_id>/tag")

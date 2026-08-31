@@ -7,8 +7,10 @@ import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/category.dart';
 import 'package:kitchenowl/models/household.dart';
 import 'package:kitchenowl/models/item.dart';
+import 'package:kitchenowl/pages/receipt_scraper_page.dart';
 import 'package:kitchenowl/widgets/home_page/sliver_category_item_grid_list.dart';
 import 'package:kitchenowl/widgets/item_popup_menu_button.dart';
+import 'package:kitchenowl/widgets/select_file.dart';
 
 class HouseholdSettingsItemsPage extends StatefulWidget {
   final Household household;
@@ -100,6 +102,13 @@ class _HouseholdSettingsItemsPageState
                 SliverAppBar(
                   title: Text(AppLocalizations.of(context)!.items),
                   floating: true,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.camera_alt_rounded),
+                      tooltip: AppLocalizations.of(context)!.receiptScan,
+                      onPressed: () => _scanReceipt(context),
+                    ),
+                  ],
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -149,6 +158,20 @@ class _HouseholdSettingsItemsPageState
         ),
       ),
     );
+  }
+
+  Future<void> _scanReceipt(BuildContext context) async {
+    final file = await selectFile(
+      context: context,
+      title: AppLocalizations.of(context)!.receiptScan,
+    );
+    if (file == null || file.isEmpty || !context.mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => ReceiptScraperPage(
+        file: file,
+        household: widget.household,
+      ),
+    ));
   }
 
   Widget _itemPopmenuBuilder(Item item) => ItemPopupMenuButton(
