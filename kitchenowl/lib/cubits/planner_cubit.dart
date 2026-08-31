@@ -54,13 +54,15 @@ class PlannerCubit extends Cubit<PlannerCubitState> {
       household: household,
     ));
 
-    final costEstimate = (household.featurePricing ?? false)
-        ? await ApiService.getInstance().getPlannerCost(
-            household,
-            DateTime.now(),
-            DateTime.now().add(const Duration(days: 7)),
-          )
-        : CostEstimate.unavailable;
+    // Always ask the server rather than gating on this cubit's (possibly
+    // stale, since household is captured once at construction and never
+    // refetched here) household.featurePricing - the backend already
+    // returns a graceful "unavailable" result when pricing isn't enabled.
+    final costEstimate = await ApiService.getInstance().getPlannerCost(
+      household,
+      DateTime.now(),
+      DateTime.now().add(const Duration(days: 7)),
+    );
 
     emit(LoadedPlannerCubitState(
       await planned,

@@ -50,11 +50,14 @@ class RecipeCubit extends Cubit<RecipeState> {
   }
 
   Future<void> _refreshCost() async {
-    if (state.household == null ||
-        !(state.household!.featurePricing ?? false)) {
+    if (state.household == null) {
       emit(state.copyWith(costEstimate: CostEstimate.unavailable));
       return;
     }
+    // Always ask the server rather than gating on household.featurePricing
+    // here - the backend already returns a graceful "unavailable" result
+    // when pricing isn't enabled, and this avoids relying on a client-side
+    // household snapshot possibly being stale.
     final cost = await ApiService.getInstance().getRecipeCost(
       state.recipe,
       yields: state.selectedYields,

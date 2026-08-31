@@ -10,12 +10,16 @@ import 'package:kitchenowl/services/api/api_service.dart';
 
 class CostEstimate {
   final double? total;
+  // Proportional cost of exactly the amount needed, ignoring pack rounding.
+  // Only populated for recipe cost estimates.
+  final double? exactTotal;
   final bool complete;
   final int pricedItems;
   final int totalItems;
 
   const CostEstimate({
     this.total,
+    this.exactTotal,
     this.complete = false,
     this.pricedItems = 0,
     this.totalItems = 0,
@@ -23,6 +27,7 @@ class CostEstimate {
 
   factory CostEstimate.fromJson(Map<String, dynamic> map) => CostEstimate(
         total: (map['total'] as num?)?.toDouble(),
+        exactTotal: (map['exact_total'] as num?)?.toDouble(),
         complete: map['complete'] ?? false,
         pricedItems: map['priced_items'] ?? 0,
         totalItems: map['total_items'] ?? 0,

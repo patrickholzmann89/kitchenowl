@@ -45,6 +45,10 @@ def compute_single_item_cost(
     total, packs = _priced_total(base_amount, price, pack_base_amount)
     return {
         "total": total,
+        # Proportional cost for exactly `amount`, ignoring pack rounding -
+        # e.g. what the raw ingredients "are worth" even if you actually had
+        # to buy whole packs to get them.
+        "exact_total": (base_amount / pack_base_amount) * price.price,
         "packs": packs,
         "unit_price": price.price / pack_base_amount,
     }
@@ -53,9 +57,13 @@ def compute_single_item_cost(
 def compute_recipe_cost(
     recipe: Recipe, store_id: int, yield_factor: float = 1.0
 ) -> dict[str, Any]:
-    """Recipe-level estimate, rounded per recipe in isolation (i.e. assuming
-    you're buying everything fresh just for this recipe)."""
+    """Recipe-level estimate. `total` is rounded per recipe in isolation
+    (i.e. assuming you're buying everything fresh, in whole packs, just for
+    this recipe). `exact_total` is the proportional cost of exactly the
+    amount needed, ignoring pack rounding - i.e. what the ingredients
+    "are worth" regardless of how they'd actually have to be purchased."""
     total = 0.0
+    exact_total = 0.0
     priced = 0
     required_items = [ri for ri in recipe.items if not ri.optional]
 
@@ -65,11 +73,13 @@ def compute_recipe_cost(
         if result is None:
             continue
         total += result["total"]
+        exact_total += result["exact_total"]
         priced += 1
 
     total_items = len(required_items)
     return {
         "total": total if priced > 0 else None,
+        "exact_total": exact_total if priced > 0 else None,
         "complete": priced == total_items and total_items > 0,
         "priced_items": priced,
         "total_items": total_items,

@@ -131,6 +131,49 @@ def test_sold_loose_price_is_proportional_not_rounded(
     cost = response.get_json()
     # proportional: 137g / 100g * 0.99 = 1.3563, NOT rounded up to 200g worth
     assert abs(cost["total"] - (137 / 100 * 0.99)) < 1e-9, cost
+    # exact_total matches total for loose goods - no rounding either way
+    assert abs(cost["exact_total"] - cost["total"]) < 1e-9, cost
+
+
+def test_recipe_cost_exact_total_ignores_pack_rounding(
+    user_client_with_household, household_id, item_name
+):
+    client = user_client_with_household
+    store_id = _create_store(client, household_id, "Aldi")
+    _set_preferred_store(client, household_id, store_id)
+
+    recipe_data = {
+        "name": "Packaged Recipe",
+        "description": "",
+        "yields": 1,
+        "items": [
+            {
+                "name": item_name,
+                "description": "1 Stk",
+                "optional": False,
+                "amount": 1,
+                "unit": "piece",
+            }
+        ],
+    }
+    response = client.post(f"/api/household/{household_id}/recipe", json=recipe_data)
+    assert response.status_code == 200
+    recipe = response.get_json()
+    recipe_id = recipe["id"]
+    item_id = recipe["items"][0]["id"]
+
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={"store_id": store_id, "price": 0.6, "pack_amount": 3, "pack_unit": "piece"},
+    )
+    assert response.status_code == 200
+
+    response = client.get(f"/api/recipe/{recipe_id}/cost")
+    assert response.status_code == 200
+    cost = response.get_json()
+    # total rounds up to a whole pack of 3 (0.60), exact_total is just 1/3 of a pack (0.20)
+    assert abs(cost["total"] - 0.6) < 1e-9, cost
+    assert abs(cost["exact_total"] - 0.2) < 1e-9, cost
 
 
 def test_recipe_cost(user_client_with_household, household_id, item_name):

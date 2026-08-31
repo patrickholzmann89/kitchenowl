@@ -427,10 +427,13 @@ class ShoppinglistCubit extends Cubit<ShoppinglistCubitState> {
     final shoppinglist = shoppingLists[selectedShoppinglistId];
 
     Future<List<Category>> categories = fetchCategories();
-    Future<CostEstimate> costEstimate =
-        (household.featurePricing ?? false) && shoppinglist != null
-            ? ApiService.getInstance().getShoppinglistCost(shoppinglist)
-            : Future.value(CostEstimate.unavailable);
+    // Always ask the server rather than gating on this cubit's (possibly
+    // stale, since household is captured once at construction and never
+    // refetched here) household.featurePricing - the backend already
+    // returns a graceful "unavailable" result when pricing isn't enabled.
+    Future<CostEstimate> costEstimate = shoppinglist != null
+        ? ApiService.getInstance().getShoppinglistCost(shoppinglist)
+        : Future.value(CostEstimate.unavailable);
 
     if (query != null && query.isNotEmpty) {
       // Split query into name and description

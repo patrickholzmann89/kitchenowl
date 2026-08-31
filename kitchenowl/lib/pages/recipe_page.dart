@@ -219,18 +219,27 @@ class _RecipePageState extends State<RecipePage> {
                       ),
                     ),
                   ),
-                if (state.household?.featurePricing ?? false)
+                if (state.costEstimate.total != null)
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     sliver: SliverToBoxAdapter(
-                      child: state.costEstimate.total != null
-                          ? Text(
-                              "${AppLocalizations.of(context)!.estimatedCost}: "
-                              "${NumberFormat.simpleCurrency(locale: state.household?.language).format(state.costEstimate.total!)}"
-                              "${!state.costEstimate.complete ? " (${AppLocalizations.of(context)!.approximately})" : ""}",
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (state.costEstimate.exactTotal != null)
+                            Text(
+                              "${AppLocalizations.of(context)!.exactIngredientCost}: "
+                              "${NumberFormat.simpleCurrency(locale: state.household?.language).format(state.costEstimate.exactTotal!)}",
                               style: Theme.of(context).textTheme.bodyMedium,
-                            )
-                          : const SizedBox.shrink(),
+                            ),
+                          Text(
+                            "${AppLocalizations.of(context)!.estimatedCost}: "
+                            "${NumberFormat.simpleCurrency(locale: state.household?.language).format(state.costEstimate.total!)}"
+                            "${!state.costEstimate.complete ? " (${AppLocalizations.of(context)!.approximately})" : ""}",
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 if (state.recipe.items.where((e) => !e.optional).isNotEmpty)
