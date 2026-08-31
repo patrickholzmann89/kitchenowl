@@ -5,6 +5,7 @@ import app.util.description_splitter as description_splitter
 from flask_jwt_extended import jwt_required
 from app.models import Item, RecipeItems, Recipe, Category, ItemPrice, Store
 from app.service.aldi_price_search import searchAldiArticles
+from app.service.file_has_access_or_download import file_has_access_or_download
 from .schemas import (
     SearchByNameRequest,
     UpdateItem,
@@ -194,6 +195,8 @@ def updateItem(args, id):
             item.name = newName
     if "piece_weight" in args:
         item.piece_weight = args["piece_weight"]
+    if "photo" in args and args["photo"] != item.photo:
+        item.photo = file_has_access_or_download(args["photo"], item.photo)
     item.save()
 
     if "merge_item_id" in args and args["merge_item_id"] != id:

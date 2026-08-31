@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped
 Model = db.Model
 if TYPE_CHECKING:
     from app.models import Household, RecipeItems, ShoppinglistItems, ItemPrice
+    from app.models.file import File
     from app.helpers.db_model_base import DbModelBase
 
     Model = DbModelBase
@@ -35,6 +36,17 @@ class Item(Model, DbModelAuthorizeMixin):
     # recipe amount (e.g. "300g Paprika") against a piece-based pack price
     # (e.g. "3 Stk pro Packung"), which otherwise can't be compared.
     piece_weight: Mapped[float | None] = db.Column(db.Float, nullable=True)
+    photo: Mapped[str | None] = db.Column(db.String(), db.ForeignKey("file.filename"))
+
+    photo_file: Mapped["File"] = cast(
+        Mapped["File"],
+        db.relationship(
+            "File",
+            back_populates="item",
+            uselist=False,
+            lazy="selectin",
+        ),
+    )
 
     household: Mapped["Household"] = cast(
         Mapped["Household"],
@@ -105,6 +117,8 @@ class Item(Model, DbModelAuthorizeMixin):
         if self.category_id:
             category = cast(Category, Category.find_by_id(self.category_id))
             res["category"] = category.obj_to_dict()
+        if self.photo_file:
+            res["photo_hash"] = self.photo_file.blur_hash
         return res
 
     def obj_to_export_dict(self) -> dict[str, Any]:

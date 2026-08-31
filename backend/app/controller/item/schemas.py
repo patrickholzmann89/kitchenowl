@@ -45,6 +45,7 @@ class UpdateItem(Schema):
         allow_none=True,
     )
     piece_weight = fields.Float(validate=lambda a: a > 0, allow_none=True)
+    photo = fields.String(allow_none=True)
 
     # if set this merges the specified item into this item thus combining them to one
     merge_item_id = fields.Integer(

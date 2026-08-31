@@ -16,6 +16,7 @@ import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/models/update_value.dart';
 import 'package:kitchenowl/pages/aldi_search_page.dart';
+import 'package:kitchenowl/widgets/image_provider.dart';
 import 'package:kitchenowl/widgets/item_popup_menu_button.dart';
 import 'package:kitchenowl/widgets/item_price_dialog.dart';
 import 'package:kitchenowl/widgets/item_wrap_menu.dart';
@@ -117,6 +118,32 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
               onRefresh: cubit.refresh,
               child: CustomScrollView(
                 slivers: [
+                  if (widget.item is! RecipeItem)
+                    BlocBuilder<ItemEditCubit, ItemEditState>(
+                      bloc: cubit,
+                      buildWhen: (prev, curr) => prev.photo != curr.photo,
+                      builder: (context, state) => state.photo == null
+                          ? const SliverToBoxAdapter()
+                          : SliverPadding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                              sliver: SliverToBoxAdapter(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: AspectRatio(
+                                    aspectRatio: 16 / 9,
+                                    child: Image(
+                                      image: getImageProvider(
+                                        context,
+                                        state.photo!,
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
                   if (widget.item is ItemWithDescription)
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -380,7 +407,12 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                                           onPressed: () async {
                                             final result = await Navigator.of(
                                                     context)
-                                                .push<(ItemPrice, double?)>(
+                                                .push<
+                                                    (
+                                                      ItemPrice,
+                                                      double?,
+                                                      String?,
+                                                    )>(
                                               MaterialPageRoute(
                                                 builder: (context) =>
                                                     AldiSearchPage(
@@ -390,14 +422,20 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                                               ),
                                             );
                                             if (result != null) {
-                                              final (price, pieceWeight) =
-                                                  result;
+                                              final (
+                                                price,
+                                                pieceWeight,
+                                                photo,
+                                              ) = result;
                                               cubit.addOrUpdateItemPrice(price);
                                               if (pieceWeight != null) {
                                                 cubit.setPieceWeight(
                                                     pieceWeight);
                                                 pieceWeightController.text =
                                                     pieceWeight.toString();
+                                              }
+                                              if (photo != null) {
+                                                cubit.setPhoto(photo);
                                               }
                                             }
                                           },

@@ -66,6 +66,7 @@ class _AldiSearchPageState extends State<AldiSearchPage> {
         packUnit: confirmed.packUnit,
       ),
       confirmed.pieceWeight,
+      confirmed.imageUrl,
     ));
   }
 
