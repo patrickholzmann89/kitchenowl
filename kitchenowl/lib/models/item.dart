@@ -13,6 +13,10 @@ class Item extends Model {
   final Category? category;
   final bool? isDefault;
   final String? defaultKey;
+  // Average weight in grams of a single piece of this item (e.g. 1 bell
+  // pepper =~ 150g) - lets the backend price a weight-based recipe amount
+  // against a piece-based pack price.
+  final double? pieceWeight;
 
   const Item({
     this.id,
@@ -22,6 +26,7 @@ class Item extends Model {
     this.category,
     this.isDefault,
     this.defaultKey,
+    this.pieceWeight,
   });
 
   factory Item.fromItem({
@@ -35,6 +40,7 @@ class Item extends Model {
         ordering: item.ordering,
         isDefault: item.isDefault,
         defaultKey: item.defaultKey,
+        pieceWeight: item.pieceWeight,
       );
 
   factory Item.fromJson(Map<String, dynamic> map) => Item(
@@ -46,12 +52,14 @@ class Item extends Model {
         icon: map['icon'],
         category:
             map['category'] != null ? Category.fromJson(map['category']) : null,
+        pieceWeight: (map['piece_weight'] as num?)?.toDouble(),
       );
 
   Item copyWith({
     String? name,
     Nullable<Category>? category,
     Nullable<String>? icon,
+    Nullable<double>? pieceWeight,
   }) =>
       Item(
         id: id,
@@ -59,11 +67,12 @@ class Item extends Model {
         category: (category ?? Nullable(this.category)).value,
         icon: (icon ?? Nullable(this.icon)).value,
         ordering: ordering,
+        pieceWeight: (pieceWeight ?? Nullable(this.pieceWeight)).value,
       );
 
   @override
   List<Object?> get props =>
-      [id, name, icon, ordering, isDefault, defaultKey, category];
+      [id, name, icon, ordering, isDefault, defaultKey, category, pieceWeight];
 
   @override
   Map<String, dynamic> toJson() => {
@@ -79,6 +88,7 @@ class Item extends Model {
       "category": category?.toJsonWithId(),
       "default": isDefault,
       "default_key": defaultKey,
+      "piece_weight": pieceWeight,
     });
 }
 
@@ -95,6 +105,7 @@ class ItemWithDescription extends Item {
     super.isDefault,
     super.defaultKey,
     super.category,
+    super.pieceWeight,
     this.description = '',
     this.amount,
     this.unit,
@@ -112,6 +123,7 @@ class ItemWithDescription extends Item {
         defaultKey: map['default_key'],
         category:
             map['category'] != null ? Category.fromJson(map['category']) : null,
+        pieceWeight: (map['piece_weight'] as num?)?.toDouble(),
       );
 
   factory ItemWithDescription.fromItem({
@@ -126,6 +138,7 @@ class ItemWithDescription extends Item {
         ordering: item.ordering,
         isDefault: item.isDefault,
         defaultKey: item.defaultKey,
+        pieceWeight: item.pieceWeight,
         description: description ??
             ((item is ItemWithDescription) ? item.description : ''),
         amount: item is ItemWithDescription ? item.amount : null,
@@ -145,6 +158,7 @@ class ItemWithDescription extends Item {
     String? name,
     Nullable<Category>? category,
     Nullable<String>? icon,
+    Nullable<double>? pieceWeight,
     String? description,
     Nullable<double>? amount,
     Nullable<String>? unit,
@@ -154,6 +168,7 @@ class ItemWithDescription extends Item {
         name: name ?? this.name,
         category: (category ?? Nullable(this.category)).value,
         icon: (icon ?? Nullable(this.icon)).value,
+        pieceWeight: (pieceWeight ?? Nullable(this.pieceWeight)).value,
         description: description ?? this.description,
         amount: (amount ?? Nullable(this.amount)).value,
         unit: (unit ?? Nullable(this.unit)).value,
@@ -181,6 +196,7 @@ class ShoppinglistItem extends ItemWithDescription {
     super.ordering = 0,
     super.defaultKey,
     super.isDefault,
+    super.pieceWeight,
     this.createdById,
     this.createdAt,
   });
@@ -198,6 +214,7 @@ class ShoppinglistItem extends ItemWithDescription {
       icon: map['icon'],
       category:
           map['category'] != null ? Category.fromJson(map['category']) : null,
+      pieceWeight: (map['piece_weight'] as num?)?.toDouble(),
       createdAt: map['created_at'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['created_at'], isUtc: true)
               .toLocal()
@@ -227,6 +244,7 @@ class ShoppinglistItem extends ItemWithDescription {
         ordering: item.ordering,
         isDefault: item.isDefault,
         defaultKey: item.defaultKey,
+        pieceWeight: item.pieceWeight,
         createdAt: createdAt ?? DateTime.now(),
         createdById: createdById,
       );
@@ -236,6 +254,7 @@ class ShoppinglistItem extends ItemWithDescription {
     String? name,
     Nullable<Category>? category,
     Nullable<String>? icon,
+    Nullable<double>? pieceWeight,
     String? description,
     Nullable<double>? amount,
     Nullable<String>? unit,
@@ -245,6 +264,7 @@ class ShoppinglistItem extends ItemWithDescription {
         name: name ?? this.name,
         category: (category ?? Nullable(this.category)).value,
         icon: (icon ?? Nullable(this.icon)).value,
+        pieceWeight: (pieceWeight ?? Nullable(this.pieceWeight)).value,
         description: description ?? this.description,
         amount: (amount ?? Nullable(this.amount)).value,
         unit: (unit ?? Nullable(this.unit)).value,
@@ -278,6 +298,7 @@ class RecipeItem extends ItemWithDescription {
     super.isDefault,
     super.category,
     super.icon,
+    super.pieceWeight,
     this.optional = false,
   });
 
@@ -293,6 +314,7 @@ class RecipeItem extends ItemWithDescription {
         optional: map['optional'],
         category:
             map['category'] != null ? Category.fromJson(map['category']) : null,
+        pieceWeight: (map['piece_weight'] as num?)?.toDouble(),
       );
 
   factory RecipeItem.fromItem({
@@ -308,6 +330,7 @@ class RecipeItem extends ItemWithDescription {
         ordering: item.ordering,
         isDefault: item.isDefault,
         defaultKey: item.defaultKey,
+        pieceWeight: item.pieceWeight,
         description:
             item is ItemWithDescription ? item.description : description,
         amount: item is ItemWithDescription ? item.amount : null,
@@ -326,6 +349,7 @@ class RecipeItem extends ItemWithDescription {
     String? name,
     Nullable<Category>? category,
     Nullable<String>? icon,
+    Nullable<double>? pieceWeight,
     String? description,
     Nullable<double>? amount,
     Nullable<String>? unit,
@@ -336,6 +360,7 @@ class RecipeItem extends ItemWithDescription {
         name: name ?? this.name,
         category: (category ?? Nullable(this.category)).value,
         icon: (icon ?? Nullable(this.icon)).value,
+        pieceWeight: (pieceWeight ?? Nullable(this.pieceWeight)).value,
         description: description ?? this.description,
         amount: (amount ?? Nullable(this.amount)).value,
         unit: (unit ?? Nullable(this.unit)).value,
@@ -368,6 +393,7 @@ class RecipeItem extends ItemWithDescription {
         defaultKey: defaultKey,
         isDefault: isDefault,
         category: category,
+        pieceWeight: pieceWeight,
       );
 
   ItemWithDescription toItemWithDescription() => ItemWithDescription(
@@ -378,6 +404,7 @@ class RecipeItem extends ItemWithDescription {
         defaultKey: defaultKey,
         isDefault: isDefault,
         category: category,
+        pieceWeight: pieceWeight,
         description: description,
         amount: amount,
         unit: unit,
@@ -391,6 +418,7 @@ class RecipeItem extends ItemWithDescription {
         defaultKey: defaultKey,
         isDefault: isDefault,
         category: category,
+        pieceWeight: pieceWeight,
         description: description,
         amount: amount,
         unit: unit,

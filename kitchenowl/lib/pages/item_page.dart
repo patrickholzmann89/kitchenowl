@@ -41,6 +41,7 @@ class ItemPage<T extends Item> extends StatefulWidget {
 class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
   final TextEditingController descController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
+  final TextEditingController pieceWeightController = TextEditingController();
 
   late ItemEditCubit<T> cubit;
 
@@ -52,6 +53,7 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
       descController.text = item.description;
       amountController.text = item.amount?.toString() ?? '';
     }
+    pieceWeightController.text = widget.item.pieceWeight?.toString() ?? '';
     cubit = ItemEditCubit<T>(
       household: context.read<HouseholdCubit>().state.household,
       item: widget.item,
@@ -64,6 +66,7 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
     cubit.close();
     descController.dispose();
     amountController.dispose();
+    pieceWeightController.dispose();
     super.dispose();
   }
 
@@ -304,6 +307,34 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                                     : null,
                               ),
                           ],
+                        ),
+                      ),
+                    ),
+                  if (widget.item is! RecipeItem &&
+                      (context.read<HouseholdCubit>().state.household
+                              .featurePricing ??
+                          false))
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      sliver: SliverToBoxAdapter(
+                        child: TextField(
+                          controller: pieceWeightController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          onChanged: (s) => cubit.setPieceWeight(
+                              double.tryParse(s.replaceAll(',', '.'))),
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(14)),
+                            ),
+                            labelText:
+                                AppLocalizations.of(context)!.pieceWeight,
+                            helperText:
+                                AppLocalizations.of(context)!.pieceWeightHint,
+                            helperMaxLines: 3,
+                          ),
                         ),
                       ),
                     ),

@@ -176,6 +176,78 @@ def test_recipe_cost_exact_total_ignores_pack_rounding(
     assert abs(cost["exact_total"] - 0.2) < 1e-9, cost
 
 
+def _make_weight_recipe(client, household_id, item_name, grams):
+    recipe_data = {
+        "name": "Weight Recipe",
+        "description": "",
+        "yields": 1,
+        "items": [
+            {
+                "name": item_name,
+                "description": f"{grams}g",
+                "optional": False,
+                "amount": grams,
+                "unit": "g",
+            }
+        ],
+    }
+    response = client.post(f"/api/household/{household_id}/recipe", json=recipe_data)
+    assert response.status_code == 200
+    recipe = response.get_json()
+    return recipe["id"], recipe["items"][0]["id"]
+
+
+def test_recipe_cost_unavailable_for_mismatched_units_without_piece_weight(
+    user_client_with_household, household_id, item_name
+):
+    client = user_client_with_household
+    store_id = _create_store(client, household_id, "Aldi")
+    _set_preferred_store(client, household_id, store_id)
+
+    # Recipe needs a weight ("300g Paprika"), but the price is per piece pack
+    # - and no piece_weight is set on the item, so there's no way to compare
+    # the two kinds of unit.
+    recipe_id, item_id = _make_weight_recipe(client, household_id, item_name, 300)
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={"store_id": store_id, "price": 0.5, "pack_amount": 3, "pack_unit": "piece"},
+    )
+    assert response.status_code == 200
+
+    response = client.get(f"/api/recipe/{recipe_id}/cost")
+    assert response.status_code == 200
+    assert response.get_json()["total"] is None
+
+
+def test_recipe_cost_bridges_weight_and_piece_via_piece_weight(
+    user_client_with_household, household_id, item_name
+):
+    client = user_client_with_household
+    store_id = _create_store(client, household_id, "Aldi")
+    _set_preferred_store(client, household_id, store_id)
+
+    recipe_id, item_id = _make_weight_recipe(client, household_id, item_name, 300)
+
+    # 1 piece =~ 150g -> a pack of 3 =~ 450g
+    response = client.post(f"/api/item/{item_id}", json={"piece_weight": 150})
+    assert response.status_code == 200
+    assert response.get_json()["piece_weight"] == 150
+
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={"store_id": store_id, "price": 0.6, "pack_amount": 3, "pack_unit": "piece"},
+    )
+    assert response.status_code == 200
+
+    response = client.get(f"/api/recipe/{recipe_id}/cost")
+    assert response.status_code == 200
+    cost = response.get_json()
+    # 300g needed out of a 450g (3-piece) pack -> rounds up to 1 whole pack
+    assert abs(cost["total"] - 0.6) < 1e-9, cost
+    # exact proportional cost: 300/450 * 0.6 = 0.4
+    assert abs(cost["exact_total"] - 0.4) < 1e-9, cost
+
+
 def test_recipe_cost(user_client_with_household, household_id, item_name):
     client = user_client_with_household
     store_id = _create_store(client, household_id, "Aldi")

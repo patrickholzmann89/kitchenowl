@@ -2,8 +2,32 @@ import math
 from datetime import datetime
 from typing import Any
 
-from app.models import ItemPrice, Planner, Recipe, Shoppinglist, ShoppinglistItems
+from app.models import Item, ItemPrice, Planner, Recipe, Shoppinglist, ShoppinglistItems
 from app.util import units
+
+
+def _bridge_kinds(
+    base_amount: float,
+    base_kind: str,
+    pack_base_amount: float,
+    pack_kind: str,
+    piece_weight: float | None,
+) -> tuple[float, float] | None:
+    """Reconciles a recipe/shoppinglist amount and a pack size that are
+    different kinds of unit (e.g. "300g" needed vs. a price given "per 3
+    Stk") using the item's average piece weight (grams per piece), if known.
+    Returns (base_amount, pack_base_amount) expressed in a common kind, or
+    None if they can't be reconciled (different kinds and no piece_weight,
+    or a kind pair piece_weight can't bridge, e.g. volume vs. count)."""
+    if base_kind == pack_kind:
+        return base_amount, pack_base_amount
+    if not piece_weight or piece_weight <= 0:
+        return None
+    if base_kind == units.KIND_WEIGHT and pack_kind == units.KIND_COUNT:
+        return base_amount, pack_base_amount * piece_weight
+    if base_kind == units.KIND_COUNT and pack_kind == units.KIND_WEIGHT:
+        return base_amount * piece_weight, pack_base_amount
+    return None
 
 
 def _priced_total(
@@ -25,7 +49,8 @@ def compute_single_item_cost(
     """Cost for `amount` `unit` of an item at `store_id` - rounded up to
     whole packs, or proportional for loose goods (see _priced_total). None if
     the amount/unit isn't set, no price exists for that (item, store), or the
-    units aren't the same kind (e.g. weight vs count)."""
+    units are different kinds (e.g. weight vs count) that can't be
+    reconciled via the item's piece_weight (see _bridge_kinds)."""
     if amount is None or unit is None:
         return None
     price = ItemPrice.find_by_item_store(item_id, store_id)
@@ -34,11 +59,17 @@ def compute_single_item_cost(
 
     base = units.to_base(amount, unit)
     pack_base = units.to_base(price.pack_amount, price.pack_unit)
-    if base is None or pack_base is None or base[1] != pack_base[1]:
+    if base is None or pack_base is None:
         return None
 
-    base_amount, _ = base
-    pack_base_amount, _ = pack_base
+    item = Item.find_by_id(item_id)
+    bridged = _bridge_kinds(
+        base[0], base[1], pack_base[0], pack_base[1],
+        item.piece_weight if item else None,
+    )
+    if bridged is None:
+        return None
+    base_amount, pack_base_amount = bridged
     if pack_base_amount <= 0:
         return None
 
@@ -151,9 +182,19 @@ def compute_weekly_cost(
         if not price:
             continue
         pack_base = units.to_base(price.pack_amount, price.pack_unit)
-        if pack_base is None or pack_base[1] != kind or pack_base[0] <= 0:
+        if pack_base is None:
             continue
-        line_total, packs = _priced_total(base_amount, price, pack_base[0])
+        item = Item.find_by_id(item_id)
+        bridged = _bridge_kinds(
+            base_amount, kind, pack_base[0], pack_base[1],
+            item.piece_weight if item else None,
+        )
+        if bridged is None:
+            continue
+        bridged_amount, bridged_pack_amount = bridged
+        if bridged_pack_amount <= 0:
+            continue
+        line_total, packs = _priced_total(bridged_amount, price, bridged_pack_amount)
         total += line_total
         priced += 1
         lines[item_id] = {"total": line_total, "packs": packs}

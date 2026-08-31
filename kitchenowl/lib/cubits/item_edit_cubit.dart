@@ -27,6 +27,7 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
         name: state.name,
         amount: Nullable(state.amount),
         unit: Nullable(state.unit),
+        pieceWeight: Nullable(state.pieceWeight),
       )) as T);
     }
 
@@ -34,6 +35,7 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
       category: Nullable(state.category),
       icon: Nullable(state.icon),
       name: state.name,
+      pieceWeight: Nullable(state.pieceWeight),
     ) as T;
   }
 
@@ -46,6 +48,7 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
           category: item.category,
           amount: (item is ItemWithDescription) ? item.amount : null,
           unit: (item is ItemWithDescription) ? item.unit : null,
+          pieceWeight: item.pieceWeight,
         )) {
     refresh();
   }
@@ -156,6 +159,10 @@ class ItemEditCubit<T extends Item> extends Cubit<ItemEditState> {
     emit(state.copyWith(unit: Nullable(unit)));
   }
 
+  void setPieceWeight(double? pieceWeight) {
+    emit(state.copyWith(pieceWeight: Nullable(pieceWeight)));
+  }
+
   Future<bool> addOrUpdateItemPrice(ItemPrice price) async {
     if (_item.id == null) return false;
     final res =
@@ -183,6 +190,7 @@ class ItemEditState extends Equatable {
   final bool hasMerged;
   final double? amount;
   final String? unit;
+  final double? pieceWeight;
   final List<ItemPrice> prices;
   final List<Store> stores;
 
@@ -195,6 +203,7 @@ class ItemEditState extends Equatable {
     this.hasMerged = false,
     this.amount,
     this.unit,
+    this.pieceWeight,
     this.prices = const [],
     this.stores = const [],
   });
@@ -208,6 +217,7 @@ class ItemEditState extends Equatable {
     bool? hasMerged,
     Nullable<double>? amount,
     Nullable<String>? unit,
+    Nullable<double>? pieceWeight,
     List<ItemPrice>? prices,
     List<Store>? stores,
   }) =>
@@ -220,6 +230,7 @@ class ItemEditState extends Equatable {
         hasMerged: hasMerged ?? this.hasMerged,
         amount: (amount ?? Nullable(this.amount)).value,
         unit: (unit ?? Nullable(this.unit)).value,
+        pieceWeight: (pieceWeight ?? Nullable(this.pieceWeight)).value,
         prices: prices ?? this.prices,
         stores: stores ?? this.stores,
       );
@@ -234,6 +245,7 @@ class ItemEditState extends Equatable {
         hasMerged,
         amount,
         unit,
+        pieceWeight,
         prices,
         stores,
       ];
@@ -247,6 +259,7 @@ class ItemEditState extends Equatable {
       comparedTo.category != category ||
       comparedTo.icon != icon ||
       comparedTo.name != name ||
+      comparedTo.pieceWeight != pieceWeight ||
       hasMerged;
 
   bool hasChangedDescription(Item comparedTo) {

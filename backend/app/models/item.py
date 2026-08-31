@@ -30,6 +30,11 @@ class Item(Model, DbModelAuthorizeMixin):
     household_id: Mapped[int] = db.Column(
         db.Integer, db.ForeignKey("household.id"), nullable=False, index=True
     )
+    # Average weight in grams of a single piece of this item (e.g. 1 bell
+    # pepper =~ 150g) - lets the pricing service reconcile a weight-based
+    # recipe amount (e.g. "300g Paprika") against a piece-based pack price
+    # (e.g. "3 Stk pro Packung"), which otherwise can't be compared.
+    piece_weight: Mapped[float | None] = db.Column(db.Float, nullable=True)
 
     household: Mapped["Household"] = cast(
         Mapped["Household"],

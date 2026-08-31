@@ -167,6 +167,8 @@ def updateItem(args, id):
         newName: str = args["name"].strip()[:128]
         if not Item.find_by_name(item.household_id, newName):
             item.name = newName
+    if "piece_weight" in args:
+        item.piece_weight = args["piece_weight"]
     item.save()
 
     if "merge_item_id" in args and args["merge_item_id"] != id:
