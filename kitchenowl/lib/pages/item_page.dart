@@ -366,7 +366,8 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                                   contentPadding: EdgeInsets.zero,
                                   title: Text(price.store.name),
                                   subtitle: Text(
-                                    '${AppLocalizations.of(context)!.packSize}: ${price.packAmount} ${price.packUnit}',
+                                    '${AppLocalizations.of(context)!.packSize}: ${price.packAmount} ${price.packUnit}'
+                                    '${price.soldLoose ? " (${AppLocalizations.of(context)!.soldLoose})" : ""}',
                                   ),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,

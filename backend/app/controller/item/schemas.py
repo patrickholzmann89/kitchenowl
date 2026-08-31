@@ -10,6 +10,7 @@ class AddOrUpdateItemPrice(Schema):
     price = fields.Float(required=True, validate=lambda a: a >= 0)
     pack_amount = fields.Float(required=True, validate=lambda a: a > 0)
     pack_unit = fields.String(required=True, validate=validate.OneOf(ALLOWED_UNITS))
+    sold_loose = fields.Boolean(load_default=False)
 
 
 class SearchByNameRequest(Schema):

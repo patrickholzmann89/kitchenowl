@@ -62,6 +62,11 @@ class ItemPrice(Model, DbModelAuthorizeMixin):
     price: Mapped[float] = db.Column(db.Float, nullable=False)
     pack_amount: Mapped[float] = db.Column(db.Float, nullable=False, default=1.0)
     pack_unit: Mapped[str] = db.Column(db.String(16), nullable=False, default="piece")
+    # Loose goods (deli counter, bulk bins, ...) are priced per unit with no
+    # minimum purchase - cost scales proportionally to the amount needed
+    # instead of rounding up to whole packs. pack_amount/pack_unit are then
+    # just the reference quantity the price is quoted for (e.g. "100 g").
+    sold_loose: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
 
     item: Mapped["Item"] = cast(
         Mapped["Item"],

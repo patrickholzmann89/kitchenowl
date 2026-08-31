@@ -23,6 +23,7 @@ class _ItemPriceDialogState extends State<ItemPriceDialog> {
   late final TextEditingController priceController;
   late final TextEditingController packAmountController;
   late String packUnit;
+  late bool soldLoose;
 
   @override
   void initState() {
@@ -36,6 +37,7 @@ class _ItemPriceDialogState extends State<ItemPriceDialog> {
       text: widget.initial?.packAmount.toString() ?? '1',
     );
     packUnit = widget.initial?.packUnit ?? kUnitOptions.first;
+    soldLoose = widget.initial?.soldLoose ?? false;
   }
 
   @override
@@ -112,6 +114,14 @@ class _ItemPriceDialogState extends State<ItemPriceDialog> {
                 ),
               ],
             ),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text(AppLocalizations.of(context)!.soldLoose),
+              subtitle: Text(AppLocalizations.of(context)!.soldLooseHint),
+              value: soldLoose,
+              onChanged: (v) => setState(() => soldLoose = v ?? soldLoose),
+            ),
           ],
         ),
       ),
@@ -132,6 +142,7 @@ class _ItemPriceDialogState extends State<ItemPriceDialog> {
                       packAmountController.text.replaceAll(',', '.'),
                     ),
                     packUnit: packUnit,
+                    soldLoose: soldLoose,
                   ))
               : null,
           child: Text(AppLocalizations.of(context)!.set),

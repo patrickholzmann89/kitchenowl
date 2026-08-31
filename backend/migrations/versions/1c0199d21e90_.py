@@ -52,7 +52,7 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_item_price_store_id'), ['store_id'], unique=False)
 
     with op.batch_alter_table('household', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('pricing_feature', sa.Boolean(), nullable=False))
+        batch_op.add_column(sa.Column('pricing_feature', sa.Boolean(), nullable=False, server_default=sa.true()))
         batch_op.add_column(sa.Column('preferred_store_id', sa.Integer(), nullable=True))
         batch_op.create_foreign_key(batch_op.f('fk_household_preferred_store_id_store'), 'store', ['preferred_store_id'], ['id'])
 

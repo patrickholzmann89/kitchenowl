@@ -6,12 +6,26 @@ from app.models import ItemPrice, Planner, Recipe, Shoppinglist, ShoppinglistIte
 from app.util import units
 
 
+def _priced_total(
+    base_amount: float, price: ItemPrice, pack_base_amount: float
+) -> tuple[float, int | None]:
+    """Returns (total cost, packs bought - None for loose goods). Loose goods
+    (price.sold_loose, e.g. deli counter items priced per 100g with no
+    minimum purchase) scale proportionally to base_amount; packaged goods
+    round up to whole packs since you can't buy a partial pack."""
+    if price.sold_loose:
+        return (base_amount / pack_base_amount) * price.price, None
+    packs = math.ceil(base_amount / pack_base_amount)
+    return packs * price.price, packs
+
+
 def compute_single_item_cost(
     item_id: int, amount: float | None, unit: str | None, store_id: int
 ) -> dict[str, Any] | None:
-    """Cost for `amount` `unit` of an item at `store_id`, rounded up to whole
-    packs. None if the amount/unit isn't set, no price exists for that
-    (item, store), or the units aren't the same kind (e.g. weight vs count)."""
+    """Cost for `amount` `unit` of an item at `store_id` - rounded up to
+    whole packs, or proportional for loose goods (see _priced_total). None if
+    the amount/unit isn't set, no price exists for that (item, store), or the
+    units aren't the same kind (e.g. weight vs count)."""
     if amount is None or unit is None:
         return None
     price = ItemPrice.find_by_item_store(item_id, store_id)
@@ -28,9 +42,9 @@ def compute_single_item_cost(
     if pack_base_amount <= 0:
         return None
 
-    packs = math.ceil(base_amount / pack_base_amount)
+    total, packs = _priced_total(base_amount, price, pack_base_amount)
     return {
-        "total": packs * price.price,
+        "total": total,
         "packs": packs,
         "unit_price": price.price / pack_base_amount,
     }
@@ -129,8 +143,7 @@ def compute_weekly_cost(
         pack_base = units.to_base(price.pack_amount, price.pack_unit)
         if pack_base is None or pack_base[1] != kind or pack_base[0] <= 0:
             continue
-        packs = math.ceil(base_amount / pack_base[0])
-        line_total = packs * price.price
+        line_total, packs = _priced_total(base_amount, price, pack_base[0])
         total += line_total
         priced += 1
         lines[item_id] = {"total": line_total, "packs": packs}

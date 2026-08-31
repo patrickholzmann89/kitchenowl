@@ -8,6 +8,7 @@ class ItemPrice extends Model {
   final double price;
   final double packAmount;
   final String packUnit;
+  final bool soldLoose;
 
   const ItemPrice({
     this.id,
@@ -16,6 +17,7 @@ class ItemPrice extends Model {
     required this.price,
     this.packAmount = 1,
     this.packUnit = "piece",
+    this.soldLoose = false,
   });
 
   factory ItemPrice.fromJson(Map<String, dynamic> map) => ItemPrice(
@@ -25,10 +27,12 @@ class ItemPrice extends Model {
         price: (map['price'] as num).toDouble(),
         packAmount: (map['pack_amount'] as num).toDouble(),
         packUnit: map['pack_unit'] ?? "piece",
+        soldLoose: map['sold_loose'] ?? false,
       );
 
   @override
-  List<Object?> get props => [id, itemId, store, price, packAmount, packUnit];
+  List<Object?> get props =>
+      [id, itemId, store, price, packAmount, packUnit, soldLoose];
 
   @override
   Map<String, dynamic> toJson() => {
@@ -36,6 +40,7 @@ class ItemPrice extends Model {
         "price": price,
         "pack_amount": packAmount,
         "pack_unit": packUnit,
+        "sold_loose": soldLoose,
       };
 
   @override
@@ -49,6 +54,7 @@ class ItemPrice extends Model {
     double? price,
     double? packAmount,
     String? packUnit,
+    bool? soldLoose,
   }) =>
       ItemPrice(
         id: id,
@@ -57,5 +63,6 @@ class ItemPrice extends Model {
         price: price ?? this.price,
         packAmount: packAmount ?? this.packAmount,
         packUnit: packUnit ?? this.packUnit,
+        soldLoose: soldLoose ?? this.soldLoose,
       );
 }

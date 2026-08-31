@@ -86,6 +86,53 @@ def test_item_price_crud(user_client_with_household, household_id, item_id):
     assert response.get_json() == []
 
 
+def test_sold_loose_price_is_proportional_not_rounded(
+    user_client_with_household, household_id, item_id, item_name
+):
+    client = user_client_with_household
+    store_id = _create_store(client, household_id, "Metzgerei")
+
+    # 0.99 EUR per 100g, sold loose (deli counter) - no minimum pack
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={
+            "store_id": store_id,
+            "price": 0.99,
+            "pack_amount": 100,
+            "pack_unit": "g",
+            "sold_loose": True,
+        },
+    )
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["sold_loose"] is True
+
+    recipe_data = {
+        "name": "Loose Recipe",
+        "description": "",
+        "yields": 1,
+        "items": [
+            {
+                "name": item_name,
+                "description": "137g",
+                "optional": False,
+                "amount": 137,
+                "unit": "g",
+            }
+        ],
+    }
+    response = client.post(f"/api/household/{household_id}/recipe", json=recipe_data)
+    assert response.status_code == 200
+    recipe_id = response.get_json()["id"]
+
+    _set_preferred_store(client, household_id, store_id)
+
+    response = client.get(f"/api/recipe/{recipe_id}/cost")
+    assert response.status_code == 200
+    cost = response.get_json()
+    # proportional: 137g / 100g * 0.99 = 1.3563, NOT rounded up to 200g worth
+    assert abs(cost["total"] - (137 / 100 * 0.99)) < 1e-9, cost
+
+
 def test_recipe_cost(user_client_with_household, household_id, item_name):
     client = user_client_with_household
     store_id = _create_store(client, household_id, "Aldi")
