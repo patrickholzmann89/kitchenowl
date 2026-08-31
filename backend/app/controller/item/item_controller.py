@@ -4,7 +4,14 @@ from app.errors import InvalidUsage, NotFoundRequest
 import app.util.description_splitter as description_splitter
 from flask_jwt_extended import jwt_required
 from app.models import Item, RecipeItems, Recipe, Category, ItemPrice, Store
-from .schemas import SearchByNameRequest, UpdateItem, AddItem, AddOrUpdateItemPrice
+from app.service.aldi_price_search import searchAldiArticles
+from .schemas import (
+    SearchByNameRequest,
+    UpdateItem,
+    AddItem,
+    AddOrUpdateItemPrice,
+    SearchAldiArticles,
+)
 
 item = Blueprint("item", __name__)
 itemHousehold = Blueprint("item", __name__)
@@ -78,6 +85,24 @@ def addOrUpdateItemPrice(args, id):
     itemPrice.save()
 
     return jsonify(itemPrice.obj_to_dict())
+
+
+@item.route("/<int:id>/aldi-search", methods=["GET"])
+@jwt_required()
+@validate_args(SearchAldiArticles)
+def searchAldiArticlesForItem(args, id):
+    item = Item.find_by_id(id)
+    if not item:
+        raise NotFoundRequest()
+    item.checkAuthorized()
+
+    try:
+        results = searchAldiArticles(args["q"])
+    except Exception as e:
+        print("Error searching Aldi price tracker:", e)
+        return "Aldi price tracker is currently unreachable", 502
+
+    return jsonify(results)
 
 
 @item.route("/<int:id>/price/<int:store_id>", methods=["DELETE"])

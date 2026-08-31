@@ -7,6 +7,7 @@ class ReceiptLineItem extends Equatable {
   final double price;
   final int quantity;
   final Item? item;
+  final double? pieceWeight;
 
   const ReceiptLineItem({
     required this.rawText,
@@ -14,6 +15,7 @@ class ReceiptLineItem extends Equatable {
     required this.price,
     required this.quantity,
     this.item,
+    this.pieceWeight,
   });
 
   factory ReceiptLineItem.fromJson(Map<String, dynamic> map) =>
@@ -23,6 +25,7 @@ class ReceiptLineItem extends Equatable {
         price: (map['price'] as num).toDouble(),
         quantity: map['quantity'] ?? 1,
         item: map['item'] != null ? Item.fromJson(map['item']) : null,
+        pieceWeight: (map['piece_weight'] as num?)?.toDouble(),
       );
 
   ReceiptLineItem copyWith({
@@ -35,10 +38,12 @@ class ReceiptLineItem extends Equatable {
         price: price ?? this.price,
         quantity: quantity,
         item: item != null ? item() : this.item,
+        pieceWeight: pieceWeight,
       );
 
   @override
-  List<Object?> get props => [rawText, normalizedName, price, quantity, item];
+  List<Object?> get props =>
+      [rawText, normalizedName, price, quantity, item, pieceWeight];
 }
 
 class ReceiptScrape extends Equatable {

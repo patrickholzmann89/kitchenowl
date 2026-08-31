@@ -88,6 +88,9 @@
   "@soldLoose": {},
   "@soldLooseHint": {},
   "@exactIngredientCost": {},
+  "@aldiSearch": {},
+  "@aldiSearchNoResults": {},
+  "@aldiSearchError": {},
   "@receiptScan": {},
   "@receiptScanAnalysing": {},
   "@receiptScanUnsupportedMessage": {},
@@ -101,6 +104,14 @@
       "total": {
         "example": "5",
         "type": "int"
+      }
+    }
+  },
+  "@receiptScanPieceWeightDetected": {
+    "placeholders": {
+      "weight": {
+        "example": "52",
+        "type": "String"
       }
     }
   },
@@ -607,11 +618,15 @@
   "soldLoose": "Sold loose (no minimum pack)",
   "soldLooseHint": "Price scales proportionally instead of rounding up to whole packs - e.g. a deli counter item priced per 100g",
   "exactIngredientCost": "Exact ingredient cost",
+  "aldiSearch": "Search Aldi price tracker",
+  "aldiSearchNoResults": "No matching products found",
+  "aldiSearchError": "Aldi price tracker is currently unreachable",
   "receiptScan": "Scan receipt",
   "receiptScanAnalysing": "Analysing receipt...",
   "receiptScanUnsupportedMessage": "This receipt could not be processed. Make sure the photo is clear and legible, or ask an admin to configure receipt scanning on the server.",
   "receiptScanConfirm": "Update prices",
   "receiptScanImportResult": "{count} of {total} prices updated",
+  "receiptScanPieceWeightDetected": "Average weight per piece detected: ~{weight}g",
   "camera": "Camera",
   "cancel": "Cancel",
   "cards": "Cards",

@@ -4,6 +4,7 @@ import 'package:kitchenowl/helpers/named_bytearray.dart';
 import 'package:kitchenowl/models/household.dart';
 import 'package:kitchenowl/models/item.dart';
 import 'package:kitchenowl/models/item_price.dart';
+import 'package:kitchenowl/models/nullable.dart';
 import 'package:kitchenowl/models/receipt_scrape.dart';
 import 'package:kitchenowl/models/store.dart';
 import 'package:kitchenowl/services/api/api_service.dart';
@@ -146,6 +147,12 @@ class ReceiptScraperCubit extends Cubit<ReceiptScraperState> {
         ),
       );
       if (success) updated++;
+
+      if (entry.value.pieceWeight != null && item.pieceWeight == null) {
+        await ApiService.getInstance().updateItem(
+          item.copyWith(pieceWeight: Nullable(entry.value.pieceWeight)),
+        );
+      }
     }
 
     return (updated, attempted);

@@ -34,7 +34,12 @@ class ReceiptLineTile extends StatelessWidget {
       opacity: excluded ? 0.5 : 1,
       child: ListTile(
         title: Text(line.item?.name ?? line.rawText),
-        subtitle: Text(line.rawText),
+        subtitle: Text(
+          line.pieceWeight != null
+              ? '${line.rawText}\n${AppLocalizations.of(context)!.receiptScanPieceWeightDetected(line.pieceWeight!.toStringAsFixed(0))}'
+              : line.rawText,
+        ),
+        isThreeLine: line.pieceWeight != null,
         onTap: () => _selectItem(context),
         leading: IconButton(
           icon: Icon(excluded ? Icons.add_circle_outline : Icons.close),

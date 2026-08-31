@@ -15,6 +15,7 @@ import 'package:kitchenowl/models/item_price.dart';
 import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/models/update_value.dart';
+import 'package:kitchenowl/pages/aldi_search_page.dart';
 import 'package:kitchenowl/widgets/item_popup_menu_button.dart';
 import 'package:kitchenowl/widgets/item_price_dialog.dart';
 import 'package:kitchenowl/widgets/item_wrap_menu.dart';
@@ -370,6 +371,37 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                                           ),
                                         ),
                                       ),
+                                      if (!App.isOffline &&
+                                          widget.item.id != null)
+                                        IconButton(
+                                          icon: const Icon(Icons.search),
+                                          tooltip: AppLocalizations.of(context)!
+                                              .aldiSearch,
+                                          onPressed: () async {
+                                            final result = await Navigator.of(
+                                                    context)
+                                                .push<(ItemPrice, double?)>(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    AldiSearchPage(
+                                                  household: household,
+                                                  item: widget.item,
+                                                ),
+                                              ),
+                                            );
+                                            if (result != null) {
+                                              final (price, pieceWeight) =
+                                                  result;
+                                              cubit.addOrUpdateItemPrice(price);
+                                              if (pieceWeight != null) {
+                                                cubit.setPieceWeight(
+                                                    pieceWeight);
+                                                pieceWeightController.text =
+                                                    pieceWeight.toString();
+                                              }
+                                            }
+                                          },
+                                        ),
                                       if (state.stores.isNotEmpty)
                                         IconButton(
                                           icon: const Icon(Icons.add),

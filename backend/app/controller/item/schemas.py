@@ -17,6 +17,13 @@ class SearchByNameRequest(Schema):
     query = fields.String(required=True, validate=lambda a: a and not a.isspace())
 
 
+class SearchAldiArticles(Schema):
+    class Meta:
+        unknown = EXCLUDE
+
+    q = fields.String(required=True, validate=lambda a: a and not a.isspace())
+
+
 class UpdateItem(Schema):
     class Meta:
         unknown = EXCLUDE
