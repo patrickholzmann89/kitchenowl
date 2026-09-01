@@ -325,6 +325,81 @@ def test_shoppinglist_cost(
     assert abs(cost["total"] - 0.5) < 1e-9
 
 
+def test_shoppinglist_cost_falls_back_to_cheapest_other_store(
+    user_client_with_household, household_id, shoppinglist_id, item_id, item_name
+):
+    client = user_client_with_household
+    aldi_id = _create_store(client, household_id, "Aldi")
+    dm_id = _create_store(client, household_id, "dm")
+    obi_id = _create_store(client, household_id, "Obi")
+    _set_preferred_store(client, household_id, aldi_id)
+
+    # item_id has no price at the preferred store (Aldi), but is priced at
+    # both dm and Obi - should fall back to whichever is cheaper per gram
+    # (dm: 3.00/500g = 0.006/g beats Obi: 1.00/100g = 0.01/g), not just
+    # whichever has the lower pack price (Obi).
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={"store_id": dm_id, "price": 3.00, "pack_amount": 500, "pack_unit": "g"},
+    )
+    assert response.status_code == 200
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={"store_id": obi_id, "price": 1.00, "pack_amount": 100, "pack_unit": "g"},
+    )
+    assert response.status_code == 200
+    response = client.post(
+        f"/api/shoppinglist/{shoppinglist_id}/item/{item_id}",
+        json={"description": "250g", "amount": 250, "unit": "g"},
+    )
+    assert response.status_code == 200
+
+    # A second item IS priced at the preferred store (Aldi) - it must stay
+    # there even though it's also (more cheaply) priced at dm.
+    response = client.post(
+        f"/api/shoppinglist/{shoppinglist_id}/add-item-by-name",
+        json={"name": "second item"},
+    )
+    assert response.status_code == 200
+    response = client.get(f"/api/shoppinglist/{shoppinglist_id}/items")
+    second_item_id = next(
+        i["id"] for i in response.get_json() if i["name"] == "second item"
+    )
+
+    response = client.post(
+        f"/api/item/{second_item_id}/price",
+        json={"store_id": aldi_id, "price": 2.00, "pack_amount": 1, "pack_unit": "piece"},
+    )
+    assert response.status_code == 200
+    response = client.post(
+        f"/api/item/{second_item_id}/price",
+        json={"store_id": dm_id, "price": 0.50, "pack_amount": 1, "pack_unit": "piece"},
+    )
+    assert response.status_code == 200
+    response = client.post(
+        f"/api/shoppinglist/{shoppinglist_id}/item/{second_item_id}",
+        json={"description": "1 Stk", "amount": 1, "unit": "piece"},
+    )
+    assert response.status_code == 200
+
+    response = client.get(f"/api/shoppinglist/{shoppinglist_id}/cost")
+    assert response.status_code == 200
+    cost = response.get_json()
+
+    assert cost["complete"] is True
+    # dm (250g -> 1 pack of 500g @ 3.00) + Aldi (1 piece @ 2.00) = 5.00
+    assert abs(cost["total"] - 5.00) < 1e-9
+    assert cost["lines"][str(item_id)]["store_id"] == dm_id
+    assert cost["lines"][str(second_item_id)]["store_id"] == aldi_id
+
+    by_store = {s["store_id"]: s for s in cost["by_store"]}
+    assert abs(by_store[dm_id]["total"] - 3.00) < 1e-9
+    assert by_store[dm_id]["priced_items"] == 1
+    assert abs(by_store[aldi_id]["total"] - 2.00) < 1e-9
+    assert by_store[aldi_id]["priced_items"] == 1
+    assert obi_id not in by_store
+
+
 def test_add_recipe_items_merges_structured_amount(
     user_client_with_household, household_id, shoppinglist_id, recipe_with_items, item_name
 ):

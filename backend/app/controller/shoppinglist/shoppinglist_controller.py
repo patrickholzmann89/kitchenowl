@@ -204,7 +204,14 @@ def getShoppinglistCost(id):
         or not household.preferred_store_id
     ):
         return jsonify(
-            {"total": None, "complete": False, "priced_items": 0, "total_items": 0, "lines": {}}
+            {
+                "total": None,
+                "complete": False,
+                "priced_items": 0,
+                "total_items": 0,
+                "lines": {},
+                "by_store": [],
+            }
         )
 
     return jsonify(

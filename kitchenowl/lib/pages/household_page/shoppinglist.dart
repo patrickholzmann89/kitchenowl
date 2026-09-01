@@ -2,7 +2,6 @@ import 'package:animations/animations.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:kitchenowl/app.dart';
 import 'package:kitchenowl/cubits/household_cubit.dart';
 import 'package:kitchenowl/cubits/settings_cubit.dart';
@@ -11,6 +10,7 @@ import 'package:kitchenowl/enums/shoppinglist_sorting.dart';
 import 'package:kitchenowl/models/item.dart';
 import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/widgets/choice_scroll.dart';
+import 'package:kitchenowl/widgets/shopping_list/cost_estimate_banner.dart';
 import 'package:kitchenowl/widgets/shopping_list/shopping_list_choice_chip.dart';
 import 'package:kitchenowl/widgets/shopping_list/sliver_shopinglist_item_view.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -83,17 +83,13 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
             child: BlocBuilder<ShoppinglistCubit, ShoppinglistCubitState>(
               bloc: cubit,
               builder: (context, state) {
-                final costBanner = state.costEstimate.total != null
-                    ? Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                        child: Text(
-                          "${AppLocalizations.of(context)!.estimatedCost}: "
-                          "${NumberFormat.simpleCurrency(locale: BlocProvider.of<HouseholdCubit>(context).state.household.language).format(state.costEstimate.total!)}"
-                          "${!state.costEstimate.complete ? " (${AppLocalizations.of(context)!.approximately})" : ""}",
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      )
-                    : const SizedBox.shrink();
+                final costBanner = CostEstimateBanner(
+                  costEstimate: state.costEstimate,
+                  locale: BlocProvider.of<HouseholdCubit>(context)
+                      .state
+                      .household
+                      .language,
+                );
                 final headerRow = LeftRightWrap(
                   left: (state.shoppinglists.length < 2)
                       ? const SizedBox()

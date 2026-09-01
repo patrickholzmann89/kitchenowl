@@ -43,35 +43,68 @@ def _priced_total(
     return packs * price.price, packs
 
 
+def _resolve_price(
+    item_id: int,
+    preferred_store_id: int,
+    base_amount: float,
+    base_kind: str,
+    piece_weight: float | None,
+) -> tuple[ItemPrice, float, float] | None:
+    """Picks which store's price to use for `amount`/`unit` (already
+    expressed as base_amount/base_kind, see units.to_base): the preferred
+    store's price if it has one, otherwise - among every other store that has
+    a price for this item - whichever is cheapest per base unit. Returns
+    (price, bridged_base_amount, bridged_pack_amount), or None if nothing is
+    priced or bridgeable (see _bridge_kinds)."""
+    preferred = ItemPrice.find_by_item_store(item_id, preferred_store_id)
+    candidates = [preferred] if preferred else ItemPrice.all_by_item(item_id)
+
+    best: tuple[float, ItemPrice, float, float] | None = None
+    for price in candidates:
+        pack_base = units.to_base(price.pack_amount, price.pack_unit)
+        if pack_base is None:
+            continue
+        bridged = _bridge_kinds(
+            base_amount, base_kind, pack_base[0], pack_base[1], piece_weight
+        )
+        if bridged is None:
+            continue
+        bridged_base_amount, bridged_pack_amount = bridged
+        if bridged_pack_amount <= 0:
+            continue
+        unit_price = price.price / bridged_pack_amount
+        if best is None or unit_price < best[0]:
+            best = (unit_price, price, bridged_base_amount, bridged_pack_amount)
+
+    if best is None:
+        return None
+    _, price, bridged_base_amount, bridged_pack_amount = best
+    return price, bridged_base_amount, bridged_pack_amount
+
+
 def compute_single_item_cost(
     item_id: int, amount: float | None, unit: str | None, store_id: int
 ) -> dict[str, Any] | None:
-    """Cost for `amount` `unit` of an item at `store_id` - rounded up to
-    whole packs, or proportional for loose goods (see _priced_total). None if
-    the amount/unit isn't set, no price exists for that (item, store), or the
-    units are different kinds (e.g. weight vs count) that can't be
-    reconciled via the item's piece_weight (see _bridge_kinds)."""
+    """Cost for `amount` `unit` of an item, preferring `store_id` but falling
+    back to the cheapest other store that has a price for it (see
+    _resolve_price) - rounded up to whole packs, or proportional for loose
+    goods (see _priced_total). None if the amount/unit isn't set, no store
+    has a price for this item, or the units are different kinds (e.g. weight
+    vs count) that can't be reconciled via the item's piece_weight."""
     if amount is None or unit is None:
-        return None
-    price = ItemPrice.find_by_item_store(item_id, store_id)
-    if not price:
         return None
 
     base = units.to_base(amount, unit)
-    pack_base = units.to_base(price.pack_amount, price.pack_unit)
-    if base is None or pack_base is None:
+    if base is None:
         return None
 
     item = Item.find_by_id(item_id)
-    bridged = _bridge_kinds(
-        base[0], base[1], pack_base[0], pack_base[1],
-        item.piece_weight if item else None,
+    resolved = _resolve_price(
+        item_id, store_id, base[0], base[1], item.piece_weight if item else None
     )
-    if bridged is None:
+    if resolved is None:
         return None
-    base_amount, pack_base_amount = bridged
-    if pack_base_amount <= 0:
-        return None
+    price, base_amount, pack_base_amount = resolved
 
     total, packs = _priced_total(base_amount, price, pack_base_amount)
     return {
@@ -82,6 +115,8 @@ def compute_single_item_cost(
         "exact_total": (base_amount / pack_base_amount) * price.price,
         "packs": packs,
         "unit_price": price.price / pack_base_amount,
+        "store_id": price.store_id,
+        "store_name": price.store.name,
     }
 
 
@@ -125,6 +160,7 @@ def compute_shoppinglist_cost(shoppinglist: Shoppinglist, store_id: int) -> dict
     total = 0.0
     priced = 0
     lines: dict[int, dict[str, Any]] = {}
+    by_store: dict[int, dict[str, Any]] = {}
     for si in items:
         result = compute_single_item_cost(si.item_id, si.amount, si.unit, store_id)
         if result is None:
@@ -133,12 +169,27 @@ def compute_shoppinglist_cost(shoppinglist: Shoppinglist, store_id: int) -> dict
         priced += 1
         lines[si.item_id] = result
 
+        store_total = by_store.setdefault(
+            result["store_id"],
+            {
+                "store_id": result["store_id"],
+                "store_name": result["store_name"],
+                "total": 0.0,
+                "priced_items": 0,
+            },
+        )
+        store_total["total"] += result["total"]
+        store_total["priced_items"] += 1
+
     return {
         "total": total if priced > 0 else None,
         "complete": priced == len(items) and len(items) > 0,
         "priced_items": priced,
         "total_items": len(items),
         "lines": lines,
+        "by_store": sorted(
+            by_store.values(), key=lambda s: s["total"], reverse=True
+        ),
     }
 
 
@@ -178,22 +229,13 @@ def compute_weekly_cost(
     priced = 0
     lines: dict[int, dict[str, Any]] = {}
     for (item_id, kind), base_amount in aggregated.items():
-        price = ItemPrice.find_by_item_store(item_id, store_id)
-        if not price:
-            continue
-        pack_base = units.to_base(price.pack_amount, price.pack_unit)
-        if pack_base is None:
-            continue
         item = Item.find_by_id(item_id)
-        bridged = _bridge_kinds(
-            base_amount, kind, pack_base[0], pack_base[1],
-            item.piece_weight if item else None,
+        resolved = _resolve_price(
+            item_id, store_id, base_amount, kind, item.piece_weight if item else None
         )
-        if bridged is None:
+        if resolved is None:
             continue
-        bridged_amount, bridged_pack_amount = bridged
-        if bridged_pack_amount <= 0:
-            continue
+        price, bridged_amount, bridged_pack_amount = resolved
         line_total, packs = _priced_total(bridged_amount, price, bridged_pack_amount)
         total += line_total
         priced += 1

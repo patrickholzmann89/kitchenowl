@@ -8,6 +8,28 @@ import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/models/store.dart';
 import 'package:kitchenowl/services/api/api_service.dart';
 
+class StoreCostEstimate {
+  final int storeId;
+  final String storeName;
+  final double total;
+  final int pricedItems;
+
+  const StoreCostEstimate({
+    required this.storeId,
+    required this.storeName,
+    required this.total,
+    required this.pricedItems,
+  });
+
+  factory StoreCostEstimate.fromJson(Map<String, dynamic> map) =>
+      StoreCostEstimate(
+        storeId: map['store_id'],
+        storeName: map['store_name'],
+        total: (map['total'] as num).toDouble(),
+        pricedItems: map['priced_items'] ?? 0,
+      );
+}
+
 class CostEstimate {
   final double? total;
   // Proportional cost of exactly the amount needed, ignoring pack rounding.
@@ -16,6 +38,10 @@ class CostEstimate {
   final bool complete;
   final int pricedItems;
   final int totalItems;
+  // Per-store subtotals (an item may be priced via a fallback store other
+  // than the household's preferred one) - only populated for shopping-list
+  // cost estimates, sorted by total descending.
+  final List<StoreCostEstimate> byStore;
 
   const CostEstimate({
     this.total,
@@ -23,6 +49,7 @@ class CostEstimate {
     this.complete = false,
     this.pricedItems = 0,
     this.totalItems = 0,
+    this.byStore = const [],
   });
 
   factory CostEstimate.fromJson(Map<String, dynamic> map) => CostEstimate(
@@ -31,6 +58,13 @@ class CostEstimate {
         complete: map['complete'] ?? false,
         pricedItems: map['priced_items'] ?? 0,
         totalItems: map['total_items'] ?? 0,
+        byStore: map['by_store'] != null
+            ? List<StoreCostEstimate>.from(
+                (map['by_store'] as List).map(
+                  (e) => StoreCostEstimate.fromJson(e),
+                ),
+              )
+            : const [],
       );
 
   static const CostEstimate unavailable = CostEstimate();
