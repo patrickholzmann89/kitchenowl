@@ -13,11 +13,17 @@ PIECE = "piece"
 MG = "mg"
 G = "g"
 KG = "kg"
+# Spoon measures have no fixed weight (it depends on the ingredient's
+# density), but are treated as WEIGHT using a generic average weight per
+# spoon (5g/15g, the common culinary rule of thumb) so they can still be
+# priced against a weight-priced item (see _TO_BASE_FACTOR below).
+TSP = "tsp"
+TBSP = "tbsp"
 # VOLUME (base unit: ml)
 ML = "ml"
 L = "l"
 
-ALLOWED_UNITS = (PIECE, MG, G, KG, ML, L)
+ALLOWED_UNITS = (PIECE, MG, G, KG, TSP, TBSP, ML, L)
 
 KIND_COUNT = "COUNT"
 KIND_WEIGHT = "WEIGHT"
@@ -28,6 +34,8 @@ _UNIT_KIND = {
     MG: KIND_WEIGHT,
     G: KIND_WEIGHT,
     KG: KIND_WEIGHT,
+    TSP: KIND_WEIGHT,
+    TBSP: KIND_WEIGHT,
     ML: KIND_VOLUME,
     L: KIND_VOLUME,
 }
@@ -37,6 +45,8 @@ _TO_BASE_FACTOR = {
     MG: 1.0 / 1000,
     G: 1.0,
     KG: 1000.0,
+    TSP: 5.0,
+    TBSP: 15.0,
     ML: 1.0,
     L: 1000.0,
 }

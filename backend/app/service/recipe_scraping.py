@@ -120,7 +120,17 @@ def scrapePublic(url: str, html: str, household: Household) -> dict[str, Any] | 
                 "optional": False,
             }
         else:
-            items[ingredient.originalText] = None
+            # No existing household item matches yet - keep the parsed
+            # amount/unit/description around (with no "id") instead of
+            # discarding them, so they aren't lost once the user links or
+            # creates an item for this ingredient on the review screen.
+            items[ingredient.originalText] = {
+                "name": name,
+                "description": ingredient.description,
+                "amount": ingredient.amount,
+                "unit": ingredient.unit,
+                "optional": False,
+            }
     return {
         "recipe": recipe.obj_to_dict(),
         "items": items,

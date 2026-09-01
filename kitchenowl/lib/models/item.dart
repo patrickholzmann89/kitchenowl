@@ -373,6 +373,8 @@ class RecipeItem extends ItemWithDescription {
   factory RecipeItem.fromItem({
     required Item item,
     String description = '',
+    double? amount,
+    String? unit,
     bool optional = false,
   }) =>
       RecipeItem(
@@ -387,8 +389,8 @@ class RecipeItem extends ItemWithDescription {
         photo: item.photo,
         description:
             item is ItemWithDescription ? item.description : description,
-        amount: item is ItemWithDescription ? item.amount : null,
-        unit: item is ItemWithDescription ? item.unit : null,
+        amount: item is ItemWithDescription ? item.amount : amount,
+        unit: item is ItemWithDescription ? item.unit : unit,
         optional: optional,
       );
 

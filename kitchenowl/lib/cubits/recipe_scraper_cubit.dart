@@ -49,7 +49,10 @@ class RecipeScraperCubit extends Cubit<RecipeScraperState> {
     final items = (state as RecipeScraperLoadedState)
         .items
         .values
-        .where((e) => e != null)
+        // A scraped ingredient not yet linked to a household item (see
+        // StringItemMatch._isLinked) only carries the parsed amount/unit
+        // for prefilling once linked - it isn't a confirmed item yet.
+        .where((e) => e?.id != null)
         .cast<RecipeItem>()
         .fold<List<RecipeItem>>(
       [],

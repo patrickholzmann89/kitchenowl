@@ -9,8 +9,8 @@ from app.service.ingredient_parsing import parseGerman, parseNLP
         ("300g Reis", "Reis", "", 300.0, "g"),
         ("300 g Reis", "Reis", "", 300.0, "g"),
         ("2 Zwiebeln, gewürfelt", "Zwiebeln", "", 2.0, "piece"),
-        ("1 TL Salz", "Salz", "TL", 1.0, "piece"),
-        ("3 EL Olivenöl", "Olivenöl", "EL", 3.0, "piece"),
+        ("1 TL Salz", "Salz", "", 1.0, "tsp"),
+        ("3 EL Olivenöl", "Olivenöl", "", 3.0, "tbsp"),
         ("1 Bund Petersilie, gehackt", "Petersilie", "Bund", 1.0, "piece"),
         ("200 ml Sahne", "Sahne", "", 200.0, "ml"),
         ("Salz und Pfeffer nach Geschmack", "Salz und Pfeffer nach Geschmack", "", None, None),
@@ -42,9 +42,14 @@ from app.service.ingredient_parsing import parseGerman, parseNLP
         # noun must be moved into the description, not left in the name -
         # otherwise it breaks matching against an existing pantry item.
         ("500 g kleine Kartoffeln", "Kartoffeln", "kleine", 500.0, "g"),
-        ("3-5 EL eiskaltes Wasser", "Wasser", "EL eiskaltes", 4.0, "piece"),
-        ("1-2 EL gehackte Petersilie", "Petersilie", "EL gehackte", 1.5, "piece"),
+        ("3-5 EL eiskaltes Wasser", "Wasser", "eiskaltes", 4.0, "tbsp"),
+        ("1-2 EL gehackte Petersilie", "Petersilie", "gehackte", 1.5, "tbsp"),
         ("1 kleine Knoblauchzehe", "Knoblauchzehe", "kleine", 1.0, "piece"),
+        # An adjective/participle can also sit *between* the quantity and
+        # the unit (not just after it), e.g. a baking recipe's "level
+        # teaspoon".
+        ("1 gestrichener TL Backpulver", "Backpulver", "gestrichener", 1.0, "tsp"),
+        ("2 gehäufte EL Mehl", "Mehl", "gehäufte", 2.0, "tbsp"),
     ],
 )
 def testParseGerman(ingredient, name, description, amount, unit):

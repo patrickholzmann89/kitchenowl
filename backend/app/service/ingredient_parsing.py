@@ -9,7 +9,7 @@ import pint
 from litellm import completion
 
 from app.config import SUPPORTED_LANGUAGES
-from app.util.units import KG, ML, PIECE, G, L
+from app.util.units import ALLOWED_UNITS, KG, ML, PIECE, G, L, TSP, TBSP
 
 LLM_MODEL = os.getenv("LLM_MODEL")
 LLM_API_URL = os.getenv("LLM_API_URL")
@@ -165,7 +165,9 @@ _GERMAN_UNIT_WORDS.sort(key=len, reverse=True)
 
 # Only units with a clean metric equivalent map to a structured amount/unit;
 # count-style words (Zehe, Bund, Scheibe, Prise, ...) have no equivalent and
-# are kept as description text instead (see parseGermanSingle).
+# are kept as description text instead (see parseGermanSingle). Teelöffel/
+# Esslöffel map to TSP/TBSP, a generic average-weight-per-spoon equivalent
+# (see app.util.units) rather than a true metric unit.
 _GERMAN_UNIT_TO_ALLOWED = {
     "kilogramm": KG,
     "kg": KG,
@@ -174,6 +176,10 @@ _GERMAN_UNIT_TO_ALLOWED = {
     "milliliter": ML,
     "ml": ML,
     "l": L,
+    "teelöffel": TSP,
+    "tl": TSP,
+    "esslöffel": TBSP,
+    "el": TBSP,
 }
 
 _GERMAN_UNICODE_FRACTIONS = {
@@ -234,20 +240,13 @@ _GERMAN_UNIT_PATTERN = (
     "(?:" + "|".join(re.escape(unit) for unit in _GERMAN_UNIT_WORDS) + r")\b"
 )
 
-_GERMAN_INGREDIENT_RE = re.compile(
-    rf"^\s*(?P<qty>{_GERMAN_NUMBER_PATTERN})?"
-    rf"\s*(?P<unit>{_GERMAN_UNIT_PATTERN})?\.?"
-    rf"\s*(?P<rest>.*)$",
-    re.IGNORECASE,
-)
-_PARENTHETICAL_RE = re.compile(r"\(([^)]*)\)")
-
 # Descriptive adjectives/participles that commonly sit between the
 # quantity/unit and the actual ingredient noun (e.g. "500g kleine
-# Kartoffeln", "eiskaltes Wasser", "gehackte Petersilie"). Left in place they
-# break the "starts with" item lookup against the household's pantry, since
-# the item is named after the noun, not the description. Stripped into the
-# description instead, matching how a trailing comma clause is handled.
+# Kartoffeln", "eiskaltes Wasser", "gehackte Petersilie", "1 gestrichener TL
+# Backpulver"). Left in place they break the "starts with" item lookup
+# against the household's pantry, since the item is named after the noun,
+# not the description. Stripped into the description instead, matching how a
+# trailing comma clause is handled.
 _GERMAN_ADJECTIVE_STEMS = [
     "klein",
     "groß",
@@ -257,6 +256,8 @@ _GERMAN_ADJECTIVE_STEMS = [
     "gerieben",
     "gepresst",
     "getrocknet",
+    "gestrichen",
+    "gehäuft",
     "eiskalt",
     "kalt",
     "warm",
@@ -274,10 +275,23 @@ _GERMAN_ADJECTIVE_STEMS = [
     "zerkleinert",
     "gemahlen",
 ]
-_GERMAN_ADJECTIVE_RE = re.compile(
-    r"^(?:(?:" + "|".join(_GERMAN_ADJECTIVE_STEMS) + r")(?:e|er|es|en|em)?\s+)+",
+# A repeatable "adjective + whitespace" phrase, shared by the adjective-
+# before-unit group in _GERMAN_INGREDIENT_RE (e.g. "gestrichener" in
+# "1 gestrichener TL Backpulver") and the adjective-after-unit match applied
+# to `rest` in parseGermanSingle (e.g. "kleine" in "500g kleine Kartoffeln").
+_GERMAN_ADJECTIVE_PHRASE = (
+    r"(?:(?:" + "|".join(_GERMAN_ADJECTIVE_STEMS) + r")(?:e|er|es|en|em)?\s+)+"
+)
+_GERMAN_ADJECTIVE_RE = re.compile(r"^" + _GERMAN_ADJECTIVE_PHRASE, re.IGNORECASE)
+
+_GERMAN_INGREDIENT_RE = re.compile(
+    rf"^\s*(?P<qty>{_GERMAN_NUMBER_PATTERN})?"
+    rf"\s*(?P<preAdjective>{_GERMAN_ADJECTIVE_PHRASE})?"
+    rf"\s*(?P<unit>{_GERMAN_UNIT_PATTERN})?\.?"
+    rf"\s*(?P<rest>.*)$",
     re.IGNORECASE,
 )
+_PARENTHETICAL_RE = re.compile(r"\(([^)]*)\)")
 
 
 def parseGerman(ingredients: list[str]) -> list[IngredientParsingResult]:
@@ -288,6 +302,11 @@ def parseGerman(ingredients: list[str]) -> list[IngredientParsingResult]:
 
         match = _GERMAN_INGREDIENT_RE.match(text_without_parens)
         qty = match.group("qty").strip() if match and match.group("qty") else None
+        preAdjective = (
+            match.group("preAdjective").strip()
+            if match and match.group("preAdjective")
+            else None
+        )
         unit = match.group("unit").strip() if match and match.group("unit") else None
         rest = match.group("rest").strip() if match else text_without_parens
 
@@ -295,9 +314,10 @@ def parseGerman(ingredients: list[str]) -> list[IngredientParsingResult]:
             qty = _GERMAN_NUMBER_WORDS[qty.lower()]
 
         adjectiveMatch = _GERMAN_ADJECTIVE_RE.match(rest)
-        adjective = adjectiveMatch.group().strip() if adjectiveMatch else None
+        postAdjective = adjectiveMatch.group().strip() if adjectiveMatch else None
         if adjectiveMatch:
             rest = rest[adjectiveMatch.end() :]
+        adjective = " ".join(filter(None, [preAdjective, postAdjective])) or None
 
         # Anything after the first comma is a preparation note (e.g. "gehackt"),
         # not part of the ingredient name.
@@ -348,12 +368,15 @@ def parseFallback(
 def parseLLM(
     ingredients: list[str], targetLanguageCode: str | None = None
 ) -> list[IngredientParsingResult] | None:
-    systemMessage = """
-You are a tool that returns only JSON in the form of [{"name": name, "description": description}, ...]. Split every string from the list into these two properties. You receive recipe ingredients and fill the name field with the singular name of the ingredient and everything else is the description. Translate the response into the specified language.
+    systemMessage = f"""
+You are a tool that returns only JSON in the form of [{{"name": name, "description": description, "amount": amount, "unit": unit}}, ...]. Split every string from the list into these properties. You receive recipe ingredients and fill the name field with the singular name of the ingredient and everything else that isn't the amount/unit is the description. Translate the name and description into the specified language.
+
+amount is the quantity as a plain number (e.g. 0.5, 2, 300), or null if none is given.
+unit must be exactly one of {list(ALLOWED_UNITS)} (piece = a bare count like "2 eggs", tsp = teaspoon/Teelöffel, tbsp = tablespoon/Esslöffel), or null if amount is null. Convert compatible units to the closest one of these (e.g. "1/2 cup" -> ml, "2 lb" -> kg). Keep the unit value itself in English exactly as listed, even when translating name/description. A count-style unit with no equivalent in that list (e.g. "clove", "can", "pinch", "bunch") is NOT put in unit - instead amount is still the plain count and unit is "piece", with the noun (e.g. "clove") kept in description.
 
 For example in English:
-Given: ["300g of Rice", "2 Chocolates"] you return only:
-[{"name": "Rice", "description": "300g"}, {"name": "Chocolate", "description": "2"}]
+Given: ["300g of Rice", "2 Chocolates", "1/2 teaspoon salt", "3 cloves garlic"] you return only:
+[{{"name": "Rice", "description": "", "amount": 300, "unit": "g"}}, {{"name": "Chocolate", "description": "", "amount": 2, "unit": "piece"}}, {{"name": "salt", "description": "", "amount": 0.5, "unit": "tsp"}}, {{"name": "garlic", "description": "clove", "amount": 3, "unit": "piece"}}]
 
 Return only JSON and nothing else.
 """ + (
@@ -393,9 +416,22 @@ Return only JSON and nothing else.
         return None
     parsedIngredients = []
     for i in range(len(llmResponse)):
+        # Defensively re-validate the LLM's amount/unit against our fixed
+        # vocabulary (see app.util.units) before trusting it, same as any
+        # other untrusted input - a hallucinated unit would otherwise fail
+        # marshmallow validation further down the line.
+        amount = llmResponse[i].get("amount")
+        unit = llmResponse[i].get("unit")
+        if not isinstance(amount, (int, float)) or unit not in ALLOWED_UNITS:
+            amount, unit = None, None
+
         parsedIngredients.append(
             IngredientParsingResult(
-                ingredients[i], llmResponse[i]["name"], llmResponse[i]["description"]
+                ingredients[i],
+                llmResponse[i]["name"],
+                llmResponse[i]["description"],
+                amount=amount,
+                unit=unit,
             )
         )
 

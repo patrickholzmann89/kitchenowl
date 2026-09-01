@@ -26,6 +26,12 @@ class StringItemMatch extends StatelessWidget {
     this.item,
   }) : optional = item?.optional ?? false;
 
+  // `item` is set as soon as a recipe/pdf/text scrape parses a
+  // amount/unit/description for this ingredient, even before it's linked to
+  // an actual household item (see recipe_scraping.py) - only a real `id`
+  // means it's linked to one and can be shown/edited as such.
+  bool get _isLinked => item?.id != null;
+
   @override
   Widget build(BuildContext context) {
     return FractionallySizedBox(
@@ -49,7 +55,7 @@ class StringItemMatch extends StatelessWidget {
               ),
               contentPadding: const EdgeInsets.only(left: 0, right: 0),
               horizontalTitleGap: 0,
-              trailing: item != null
+              trailing: _isLinked
                   ? IconButton(
                       onPressed: () => itemSelected(null),
                       tooltip: AppLocalizations.of(context)!.remove,
@@ -62,7 +68,7 @@ class StringItemMatch extends StatelessWidget {
             padding: const EdgeInsets.only(top: 6),
             child: AspectRatio(
               aspectRatio: 1,
-              child: item != null
+              child: _isLinked
                   ? ShoppingItemWidget(
                       item: item!,
                       selected: true,
@@ -84,7 +90,7 @@ class StringItemMatch extends StatelessWidget {
                     ),
             ),
           ),
-          if (item != null)
+          if (_isLinked)
             Row(
               children: [
                 Expanded(
@@ -96,7 +102,7 @@ class StringItemMatch extends StatelessWidget {
                 ),
               ],
             ),
-          if (item == null) const SizedBox(height: 40),
+          if (!_isLinked) const SizedBox(height: 40),
         ],
       ),
     );
@@ -109,7 +115,7 @@ class StringItemMatch extends StatelessWidget {
             household: household,
             multiple: false,
             title: string,
-            selectedItems: item != null ? [item!] : const [],
+            selectedItems: _isLinked ? [item!] : const [],
           ),
         )) ??
         [];
@@ -117,6 +123,9 @@ class StringItemMatch extends StatelessWidget {
       itemSelected(
         RecipeItem.fromItem(
           item: items[0],
+          description: item?.description ?? '',
+          amount: item?.amount,
+          unit: item?.unit,
           optional: optional,
         ),
       );
