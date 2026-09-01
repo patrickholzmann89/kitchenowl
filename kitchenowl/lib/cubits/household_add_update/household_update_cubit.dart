@@ -168,6 +168,12 @@ class HouseholdUpdateCubit
     saveHousehold();
   }
 
+  // Returns the number of prices queued for refresh, -1 if a refresh is
+  // already running, or null on failure.
+  Future<int?> refreshPrices() {
+    return ApiService.getInstance().refreshPrices(household);
+  }
+
   Future<bool> addStore(String name) async {
     final res =
         await ApiService.getInstance().addStore(household, Store(name: name));

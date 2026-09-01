@@ -82,6 +82,19 @@ extension PricingApi on ApiService {
     );
   }
 
+  // Starts a rate-limited refresh of every Aldi/dm-linked price in this
+  // household. Returns the number of prices queued, -1 if a refresh is
+  // already running, or null on failure.
+  Future<int?> refreshPrices(Household household) async {
+    final res = await post(
+      '${householdPath(household)}$storeRoute/refresh-prices',
+      "",
+    );
+    if (res.statusCode != 200) return null;
+
+    return jsonDecode(res.body)['total'];
+  }
+
   Future<bool> addStore(Household household, Store store) async {
     final res = await post(
       householdPath(household) + storeRoute,

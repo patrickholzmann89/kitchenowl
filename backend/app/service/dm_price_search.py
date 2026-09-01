@@ -200,6 +200,9 @@ def searchDmArticles(query: str, limit: int = 10) -> list[dict[str, Any]]:
                 "pack_amount": packAmount,
                 "pack_unit": packUnit,
                 "piece_weight": None,
+                # The DAN - lets app.service.price_refresh re-find this exact
+                # product in a later search (dm has no fetch-by-id endpoint).
+                "external_ref": row.get("dan") or None,
             }
         )
 

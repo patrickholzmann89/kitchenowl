@@ -196,6 +196,14 @@
       }
     }
   },
+  "@refreshPricesStarted": {
+    "placeholders": {
+      "count": {
+        "example": "12",
+        "type": "int"
+      }
+    }
+  },
   "@shoppingListContainsEntries": {
     "placeholders": {
       "entriesCount": {
@@ -456,6 +464,11 @@
   "pricePerPack": "Preis pro Packung",
   "prices": "Preise",
   "pricingFeature": "Zutatenpreise",
+  "refreshPrices": "Aldi/dm-Preise aktualisieren",
+  "refreshPricesStarted": "Aktualisiere {count} Preise im Hintergrund",
+  "refreshPricesNone": "Keine Aldi/dm-Preise zum Aktualisieren",
+  "refreshPricesAlreadyRunning": "Eine Preisaktualisierung läuft bereits",
+  "refreshPricesError": "Preisaktualisierung konnte nicht gestartet werden",
   "privacyPolicy": "Datenschutzrichtlinie",
   "privacyPolicyAgree": "Durch das Erstellen eines Kontos stimmst du der {privacyPolicy} und den {terms} zu",
   "private": "Privat",

@@ -86,6 +86,7 @@ def addOrUpdateItemPrice(args, id):
     itemPrice.pack_amount = args["pack_amount"]
     itemPrice.pack_unit = args["pack_unit"]
     itemPrice.sold_loose = args["sold_loose"]
+    itemPrice.external_ref = args["external_ref"]
     itemPrice.save()
 
     return jsonify(itemPrice.obj_to_dict())

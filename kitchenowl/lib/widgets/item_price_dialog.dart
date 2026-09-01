@@ -143,6 +143,7 @@ class _ItemPriceDialogState extends State<ItemPriceDialog> {
                     ),
                     packUnit: packUnit,
                     soldLoose: soldLoose,
+                    externalRef: widget.initial?.externalRef,
                   ))
               : null,
           child: Text(AppLocalizations.of(context)!.set),

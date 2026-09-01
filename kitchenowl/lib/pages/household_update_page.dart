@@ -326,6 +326,44 @@ class _HouseholdUpdatePageState extends State<HouseholdUpdatePage> {
                             );
                           },
                         ),
+                      if (true)
+                        BlocBuilder<HouseholdUpdateCubit, HouseholdUpdateState>(
+                          buildWhen: (prev, curr) =>
+                              prev.featurePricing != curr.featurePricing,
+                          builder: (context, state) {
+                            if (!state.featurePricing) {
+                              return const SizedBox.shrink();
+                            }
+                            return ListTile(
+                              title: Text(AppLocalizations.of(context)!
+                                  .refreshPrices),
+                              leading: const Icon(Icons.sync_rounded),
+                              contentPadding:
+                                  const EdgeInsets.only(left: 16, right: 16),
+                              onTap: () async {
+                                final cubit =
+                                    BlocProvider.of<HouseholdUpdateCubit>(
+                                        context);
+                                final total = await cubit.refreshPrices();
+                                if (!context.mounted) return;
+                                final message = total == null
+                                    ? AppLocalizations.of(context)!
+                                        .refreshPricesError
+                                    : total == -1
+                                        ? AppLocalizations.of(context)!
+                                            .refreshPricesAlreadyRunning
+                                        : total == 0
+                                            ? AppLocalizations.of(context)!
+                                                .refreshPricesNone
+                                            : AppLocalizations.of(context)!
+                                                .refreshPricesStarted(total);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(message)),
+                                );
+                              },
+                            );
+                          },
+                        ),
                     ]),
                   ),
                 ),

@@ -1,7 +1,9 @@
 from app.helpers import validate_args, authorize_household
+from app.helpers.authorize_household import RequiredRights
 from flask import jsonify, Blueprint
-from app.errors import NotFoundRequest
+from app.errors import NotFoundRequest, InvalidUsage
 from flask_jwt_extended import jwt_required
+from app.jobs.price_refresh_job import start_price_refresh
 from app.models import Store, Household
 from .schemas import AddStore, UpdateStore
 
@@ -16,6 +18,18 @@ def getAllStores(household_id):
     return jsonify(
         [e.obj_to_dict() for e in Store.all_from_household_by_name(household_id)]
     )
+
+
+@storeHousehold.route("/refresh-prices", methods=["POST"])
+@jwt_required()
+@authorize_household(RequiredRights.ADMIN)
+def refreshPrices(household_id):
+    household = Household.find_by_id(household_id)
+    if not household or not household.pricing_feature:
+        raise InvalidUsage()
+
+    total = start_price_refresh(household_id)
+    return jsonify({"total": total})
 
 
 @storeHousehold.route("", methods=["POST"])

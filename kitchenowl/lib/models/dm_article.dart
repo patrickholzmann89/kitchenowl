@@ -7,6 +7,9 @@ class DmArticle extends Equatable {
   final double packAmount;
   final String packUnit;
   final double? pieceWeight;
+  // The dm DAN, used to re-find this exact product in a later search (see
+  // app.service.price_refresh on the backend).
+  final String? externalRef;
 
   const DmArticle({
     required this.title,
@@ -15,6 +18,7 @@ class DmArticle extends Equatable {
     this.packAmount = 1,
     this.packUnit = "piece",
     this.pieceWeight,
+    this.externalRef,
   });
 
   factory DmArticle.fromJson(Map<String, dynamic> map) => DmArticle(
@@ -24,6 +28,7 @@ class DmArticle extends Equatable {
         packAmount: (map['pack_amount'] as num).toDouble(),
         packUnit: map['pack_unit'] ?? "piece",
         pieceWeight: (map['piece_weight'] as num?)?.toDouble(),
+        externalRef: map['external_ref'],
       );
 
   DmArticle copyWith({
@@ -39,6 +44,7 @@ class DmArticle extends Equatable {
         packAmount: packAmount ?? this.packAmount,
         packUnit: packUnit ?? this.packUnit,
         pieceWeight: pieceWeight != null ? pieceWeight() : this.pieceWeight,
+        externalRef: externalRef,
       );
 
   @override
@@ -49,5 +55,6 @@ class DmArticle extends Equatable {
         packAmount,
         packUnit,
         pieceWeight,
+        externalRef,
       ];
 }

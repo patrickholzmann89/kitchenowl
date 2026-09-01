@@ -64,6 +64,7 @@ class _DmSearchPageState extends State<DmSearchPage> {
         price: confirmed.price,
         packAmount: confirmed.packAmount,
         packUnit: confirmed.packUnit,
+        externalRef: confirmed.externalRef,
       ),
       confirmed.pieceWeight,
       confirmed.imageUrl,

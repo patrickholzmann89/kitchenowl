@@ -73,6 +73,9 @@ def searchAldiArticles(query: str, limit: int = 10) -> list[dict[str, Any]]:
                 "pack_amount": packAmount,
                 "pack_unit": packUnit,
                 "piece_weight": _parsePieceWeight(title, packAmount, packUnit),
+                # Lets app.service.price_refresh re-fetch this exact article
+                # later via GET /api/articles/<id> instead of searching again.
+                "external_ref": str(article["id"]) if "id" in article else None,
             }
         )
     return results

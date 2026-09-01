@@ -67,6 +67,11 @@ class ItemPrice(Model, DbModelAuthorizeMixin):
     # instead of rounding up to whole packs. pack_amount/pack_unit are then
     # just the reference quantity the price is quoted for (e.g. "100 g").
     sold_loose: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    # The Aldi article id or dm DAN this price was set from (see
+    # app.service.aldi_price_search / app.service.dm_price_search), if any -
+    # lets app.service.price_refresh re-fetch the same product later. None
+    # for manually-entered prices, or prices set before this field existed.
+    external_ref: Mapped[str | None] = db.Column(db.String(), nullable=True)
 
     item: Mapped["Item"] = cast(
         Mapped["Item"],

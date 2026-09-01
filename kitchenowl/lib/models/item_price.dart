@@ -9,6 +9,10 @@ class ItemPrice extends Model {
   final double packAmount;
   final String packUnit;
   final bool soldLoose;
+  // The Aldi article id / dm DAN this price was set from, if any - lets the
+  // backend's price-refresh job re-fetch it later. Null for manually-entered
+  // prices.
+  final String? externalRef;
 
   const ItemPrice({
     this.id,
@@ -18,6 +22,7 @@ class ItemPrice extends Model {
     this.packAmount = 1,
     this.packUnit = "piece",
     this.soldLoose = false,
+    this.externalRef,
   });
 
   factory ItemPrice.fromJson(Map<String, dynamic> map) => ItemPrice(
@@ -28,11 +33,12 @@ class ItemPrice extends Model {
         packAmount: (map['pack_amount'] as num).toDouble(),
         packUnit: map['pack_unit'] ?? "piece",
         soldLoose: map['sold_loose'] ?? false,
+        externalRef: map['external_ref'],
       );
 
   @override
   List<Object?> get props =>
-      [id, itemId, store, price, packAmount, packUnit, soldLoose];
+      [id, itemId, store, price, packAmount, packUnit, soldLoose, externalRef];
 
   @override
   Map<String, dynamic> toJson() => {
@@ -41,6 +47,7 @@ class ItemPrice extends Model {
         "pack_amount": packAmount,
         "pack_unit": packUnit,
         "sold_loose": soldLoose,
+        "external_ref": externalRef,
       };
 
   @override
@@ -64,5 +71,6 @@ class ItemPrice extends Model {
         packAmount: packAmount ?? this.packAmount,
         packUnit: packUnit ?? this.packUnit,
         soldLoose: soldLoose ?? this.soldLoose,
+        externalRef: externalRef,
       );
 }

@@ -62,6 +62,18 @@
   "@budget": {},
   "@pricingFeature": {},
   "@preferredStore": {},
+  "@refreshPrices": {},
+  "@refreshPricesStarted": {
+    "placeholders": {
+      "count": {
+        "example": "12",
+        "type": "int"
+      }
+    }
+  },
+  "@refreshPricesNone": {},
+  "@refreshPricesAlreadyRunning": {},
+  "@refreshPricesError": {},
   "@stores": {},
   "@storeAdd": {},
   "@storeDelete": {},
@@ -604,6 +616,11 @@
   "budgetSet": "Set budget",
   "pricingFeature": "Ingredient prices",
   "preferredStore": "Preferred store",
+  "refreshPrices": "Refresh Aldi/dm prices",
+  "refreshPricesStarted": "Refreshing {count} prices in the background",
+  "refreshPricesNone": "No Aldi/dm prices to refresh",
+  "refreshPricesAlreadyRunning": "A price refresh is already running",
+  "refreshPricesError": "Could not start the price refresh",
   "stores": "Stores",
   "storeAdd": "Add store",
   "storeDelete": "Delete store",
