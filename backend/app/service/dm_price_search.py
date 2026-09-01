@@ -6,7 +6,7 @@ from typing import Any
 
 import requests
 
-from app.util.units import G, KG, L, ML, PIECE
+from app.util.units import KG, ML, PIECE, G, L
 
 # Official dm-drogerie markt MCP server (dmTECH) - fixed, trusted host.
 _MCP_URL = "https://mcp.dm.de/mcp"
@@ -18,6 +18,8 @@ _HEADERS = {
 
 _TOON_HEADER_RE = re.compile(r"^\S*\[(\d+)\]\{(.*?)\}:\r?\n", re.DOTALL)
 _PRICE_RE = re.compile(r"([\d.,]+)")
+_WEIGHT_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(kg|g)\b", re.IGNORECASE)
+_VOLUME_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(l|ml)\b", re.IGNORECASE)
 _AMOUNT_UNIT_RE = re.compile(r"^\s*([\d.,]+)\s*(kg|g|l|ml)\s*$", re.IGNORECASE)
 _UNIT_MAP = {"g": G, "kg": KG, "l": L, "ml": ML}
 
@@ -130,17 +132,29 @@ def _parseGermanPrice(text: str) -> float | None:
     return float(raw)
 
 
-def _parsePackSize(weight: str, volume: str) -> tuple[float, str]:
-    # Prefer volume: for liquids in glass/heavy packaging, dm's "weight" is
-    # the gross package weight (e.g. incl. bottle), not the actual content
-    # amount, while "volume" reflects the declared net content.
-    for value in (volume, weight):
+def _parsePackSize(title: str, weight: str, volume: str) -> tuple[float, str]:
+    # dm's structured weight/volume detail fields are shipping estimates
+    # (e.g. gross weight incl. packaging), not the declared net content -
+    # the actual pack size is only reliably given in the product title
+    # (e.g. "Ahornsirup Grad A, 250 ml"). Only fall back to the detail
+    # fields when the title doesn't state an amount.
+    match = _WEIGHT_RE.search(title)
+    if match:
+        amount = float(match.group(1).replace(",", "."))
+        return amount, (KG if match.group(2).lower() == "kg" else G)
+    match = _VOLUME_RE.search(title)
+    if match:
+        amount = float(match.group(1).replace(",", "."))
+        return amount, (L if match.group(2).lower() == "l" else ML)
+
+    for value in (weight, volume):
         if not value:
             continue
         match = _AMOUNT_UNIT_RE.match(value)
         if match:
             amount = float(match.group(1).replace(",", "."))
             return amount, _UNIT_MAP[match.group(2).lower()]
+
     return 1.0, PIECE
 
 
@@ -176,7 +190,7 @@ def searchDmArticles(query: str, limit: int = 10) -> list[dict[str, Any]]:
 
         detail = detailsByDan.get(row.get("dan", ""), {})
         packAmount, packUnit = _parsePackSize(
-            detail.get("weight", ""), detail.get("volume", "")
+            title, detail.get("weight", ""), detail.get("volume", "")
         )
         results.append(
             {
