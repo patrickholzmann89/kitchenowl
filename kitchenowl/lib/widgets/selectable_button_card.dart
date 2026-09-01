@@ -87,6 +87,15 @@ class _SelectableButtonCardState extends State<SelectableButtonCard> {
                             child: Image(
                               image: widget.image!,
                               fit: BoxFit.contain,
+                              gaplessPlayback: true,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(
+                                widget.icon ?? Icons.image_not_supported_rounded,
+                                size: constraint.maxWidth / 2.4,
+                                color: widget.selected
+                                    ? Theme.of(context).colorScheme.onPrimary
+                                    : null,
+                              ),
                             ),
                           ),
                         ),

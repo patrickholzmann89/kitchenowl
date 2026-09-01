@@ -34,6 +34,15 @@ class SelectableButtonListTile extends StatefulWidget {
 
 class _SelectableButtonListTileState extends State<SelectableButtonListTile> {
   bool mouseHover = false;
+  bool _imageFailed = false;
+
+  @override
+  void didUpdateWidget(covariant SelectableButtonListTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.image != widget.image) {
+      _imageFailed = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,10 +60,15 @@ class _SelectableButtonListTileState extends State<SelectableButtonListTile> {
       child: ListTile(
         leading: widget.selected
             ? const Icon(Icons.check_rounded)
-            : widget.image != null
+            : (widget.image != null && !_imageFailed)
                 ? CircleAvatar(
                     backgroundImage: widget.image,
                     backgroundColor: Colors.transparent,
+                    onBackgroundImageError: (error, stackTrace) {
+                      if (mounted) {
+                        setState(() => _imageFailed = true);
+                      }
+                    },
                   )
                 : widget.icon != null
                     ? Icon(widget.icon,

@@ -246,7 +246,9 @@ class _RecipeListPageState extends State<RecipeListPage> {
                                       childAspectRatio: 0.67,
                                     ),
                                     itemBuilder: (context, i) => RecipeCard(
-                                      key: Key(recipes[i].name),
+                                      key: ValueKey(
+                                        recipes[i].id ?? recipes[i].name,
+                                      ),
                                       recipe: recipes[i],
                                       onUpdated: cubit.refresh,
                                     ),

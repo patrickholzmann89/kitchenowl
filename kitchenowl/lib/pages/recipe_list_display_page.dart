@@ -107,7 +107,9 @@ class _RecipeListDisplayPageState extends State<RecipeListDisplayPage> {
                       ),
                       itemBuilder: (context, i) => RecipeCard(
                         imageFlex: widget.showHousehold ? 4 : 5,
-                        key: Key(state.recipes[i].name),
+                        key: ValueKey(
+                          state.recipes[i].id ?? state.recipes[i].name,
+                        ),
                         recipe: state.recipes[i],
                         showHousehold: widget.showHousehold,
                         onUpdated: cubit.refresh,
