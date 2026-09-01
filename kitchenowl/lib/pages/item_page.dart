@@ -16,6 +16,7 @@ import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
 import 'package:kitchenowl/models/update_value.dart';
 import 'package:kitchenowl/pages/aldi_search_page.dart';
+import 'package:kitchenowl/pages/dm_search_page.dart';
 import 'package:kitchenowl/widgets/image_selector.dart';
 import 'package:kitchenowl/widgets/item_popup_menu_button.dart';
 import 'package:kitchenowl/widgets/item_price_dialog.dart';
@@ -416,6 +417,49 @@ class _ItemPageState<T extends Item> extends State<ItemPage<T>> {
                                               MaterialPageRoute(
                                                 builder: (context) =>
                                                     AldiSearchPage(
+                                                  household: household,
+                                                  item: widget.item,
+                                                ),
+                                              ),
+                                            );
+                                            if (result != null) {
+                                              final (
+                                                price,
+                                                pieceWeight,
+                                                photo,
+                                              ) = result;
+                                              cubit.addOrUpdateItemPrice(price);
+                                              if (pieceWeight != null) {
+                                                cubit.setPieceWeight(
+                                                    pieceWeight);
+                                                pieceWeightController.text =
+                                                    pieceWeight.toString();
+                                              }
+                                              if (photo != null) {
+                                                cubit.setPhoto(photo);
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      if (!App.isOffline &&
+                                          widget.item.id != null)
+                                        IconButton(
+                                          icon: const Icon(
+                                              Icons.storefront_outlined),
+                                          tooltip: AppLocalizations.of(context)!
+                                              .dmSearch,
+                                          onPressed: () async {
+                                            final result = await Navigator.of(
+                                                    context)
+                                                .push<
+                                                    (
+                                                      ItemPrice,
+                                                      double?,
+                                                      String?,
+                                                    )>(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    DmSearchPage(
                                                   household: household,
                                                   item: widget.item,
                                                 ),

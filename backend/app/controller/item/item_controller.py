@@ -5,6 +5,7 @@ import app.util.description_splitter as description_splitter
 from flask_jwt_extended import jwt_required
 from app.models import Item, RecipeItems, Recipe, Category, ItemPrice, Store
 from app.service.aldi_price_search import searchAldiArticles
+from app.service.dm_price_search import searchDmArticles
 from app.service.file_has_access_or_download import file_has_access_or_download
 from .schemas import (
     SearchByNameRequest,
@@ -12,6 +13,7 @@ from .schemas import (
     AddItem,
     AddOrUpdateItemPrice,
     SearchAldiArticles,
+    SearchDmArticles,
 )
 
 item = Blueprint("item", __name__)
@@ -102,6 +104,24 @@ def searchAldiArticlesForItem(args, id):
     except Exception as e:
         print("Error searching Aldi price tracker:", e)
         return "Aldi price tracker is currently unreachable", 502
+
+    return jsonify(results)
+
+
+@item.route("/<int:id>/dm-search", methods=["GET"])
+@jwt_required()
+@validate_args(SearchDmArticles)
+def searchDmArticlesForItem(args, id):
+    item = Item.find_by_id(id)
+    if not item:
+        raise NotFoundRequest()
+    item.checkAuthorized()
+
+    try:
+        results = searchDmArticles(args["q"])
+    except Exception as e:
+        print("Error searching dm product search:", e)
+        return "dm product search is currently unreachable", 502
 
     return jsonify(results)
 
