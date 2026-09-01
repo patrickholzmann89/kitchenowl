@@ -115,6 +115,8 @@ def scrapePublic(url: str, html: str, household: Household) -> dict[str, Any] | 
         if item:
             items[ingredient.originalText] = item.obj_to_dict() | {
                 "description": ingredient.description,
+                "amount": ingredient.amount,
+                "unit": ingredient.unit,
                 "optional": False,
             }
         else:

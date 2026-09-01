@@ -25,6 +25,7 @@ dependencies = [
     "marshmallow>=3.26.1",
     "mlxtend==0.23.1",
     "numpy>=2.2.4",
+    "pint>=0.25.3",
     "prometheus-flask-exporter>=0.23.2",
     "oic>=1.7.0",
     "pypdf>=5.1.0",

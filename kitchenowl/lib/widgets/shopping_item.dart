@@ -1,10 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:kitchenowl/helpers/units.dart';
 import 'package:kitchenowl/item_icons.dart';
 import 'package:kitchenowl/models/item.dart';
 import 'package:kitchenowl/styles/dynamic.dart';
 import 'package:kitchenowl/widgets/image_provider.dart';
 import 'package:kitchenowl/widgets/selectable_button_card.dart';
 import 'package:kitchenowl/widgets/selectable_button_list_tile.dart';
+
+/// Combines the structured amount/unit with the free-text description into
+/// a single display line, e.g. "250 ml", "2 Zehen" (unit "piece" - the noun
+/// carries the meaning instead), or just "gewürfelt" when there's no amount.
+String? _formatItemDescription(ItemWithDescription item) {
+  final parts = <String>[];
+  if (item.amount != null) {
+    final amountText = formatAmount(item.amount!);
+    parts.add(
+      item.unit != null && item.unit != 'piece'
+          ? '$amountText ${item.unit}'
+          : amountText,
+    );
+  }
+  if (item.description.isNotEmpty) parts.add(item.description);
+
+  return parts.isEmpty ? null : parts.join(' ');
+}
 
 class ShoppingItemWidget<T extends Item> extends StatelessWidget {
   final T item;
@@ -38,6 +57,9 @@ class ShoppingItemWidget<T extends Item> extends StatelessWidget {
     final image = (showPhoto && item.photo != null)
         ? getImageProvider(context, item.photo!)
         : null;
+    final description = (item is ItemWithDescription)
+        ? _formatItemDescription(item as ItemWithDescription)
+        : null;
 
     return gridStyle
         ? SelectableButtonCard(
@@ -45,9 +67,7 @@ class ShoppingItemWidget<T extends Item> extends StatelessWidget {
             selected: selected,
             icon: ItemIcons.get(item),
             image: image,
-            description: (item is ItemWithDescription)
-                ? (item as ItemWithDescription).description
-                : null,
+            description: description,
             onPressed: onPressed != null ? () => onPressed!(item) : null,
             onLongPressed:
                 onLongPressed != null ? () => onLongPressed!(item) : null,
@@ -61,9 +81,7 @@ class ShoppingItemWidget<T extends Item> extends StatelessWidget {
             listStyle: listStyle,
             raised: raised ??
                 item is ShoppinglistItem || item is RecipeItem && selected,
-            description: (item is ItemWithDescription)
-                ? (item as ItemWithDescription).description
-                : null,
+            description: description,
             onPressed: onPressed != null ? () => onPressed!(item) : null,
             onLongPressed:
                 onLongPressed != null ? () => onLongPressed!(item) : null,

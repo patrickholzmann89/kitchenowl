@@ -1,53 +1,58 @@
 import pytest
-from app.service.ingredient_parsing import parseGerman
+
+from app.service.ingredient_parsing import parseGerman, parseNLP
 
 
 @pytest.mark.parametrize(
-    "ingredient,name,description",
+    "ingredient,name,description,amount,unit",
     [
-        ("300g Reis", "Reis", "300 g"),
-        ("300 g Reis", "Reis", "300 g"),
-        ("2 Zwiebeln, gewürfelt", "Zwiebeln", "2"),
-        ("1 TL Salz", "Salz", "1 TL"),
-        ("3 EL Olivenöl", "Olivenöl", "3 EL"),
-        ("1 Bund Petersilie, gehackt", "Petersilie", "1 Bund"),
-        ("200 ml Sahne", "Sahne", "200 ml"),
-        ("Salz und Pfeffer nach Geschmack", "Salz und Pfeffer nach Geschmack", ""),
-        ("2 Eier", "Eier", "2"),
-        ("1 Packung (500g) Nudeln", "Nudeln", "1 Packung 500g"),
-        ("eine Zwiebel", "Zwiebel", "1"),
-        ("1/2 Zitrone", "Zitrone", "1/2"),
-        ("½ Zitrone", "Zitrone", "½"),
-        ("1 Dose Tomaten (400g)", "Tomaten", "1 Dose 400g"),
-        ("2-3 Karotten", "Karotten", "2-3"),
-        ("1 Prise Zucker", "Zucker", "1 Prise"),
-        ("1 Msp. Muskat", "Muskat", "1 Msp"),
-        ("4 Scheiben Schinken", "Schinken", "4 Scheiben"),
-        ("2 Zehen Knoblauch", "Knoblauch", "2 Zehen"),
-        ("1 kg Kartoffeln", "Kartoffeln", "1 kg"),
+        ("300g Reis", "Reis", "", 300.0, "g"),
+        ("300 g Reis", "Reis", "", 300.0, "g"),
+        ("2 Zwiebeln, gewürfelt", "Zwiebeln", "", 2.0, "piece"),
+        ("1 TL Salz", "Salz", "TL", 1.0, "piece"),
+        ("3 EL Olivenöl", "Olivenöl", "EL", 3.0, "piece"),
+        ("1 Bund Petersilie, gehackt", "Petersilie", "Bund", 1.0, "piece"),
+        ("200 ml Sahne", "Sahne", "", 200.0, "ml"),
+        ("Salz und Pfeffer nach Geschmack", "Salz und Pfeffer nach Geschmack", "", None, None),
+        ("2 Eier", "Eier", "", 2.0, "piece"),
+        ("1 Packung (500g) Nudeln", "Nudeln", "Packung 500g", 1.0, "piece"),
+        ("eine Zwiebel", "Zwiebel", "", 1.0, "piece"),
+        ("1/2 Zitrone", "Zitrone", "", 0.5, "piece"),
+        ("½ Zitrone", "Zitrone", "", 0.5, "piece"),
+        ("1 Dose Tomaten (400g)", "Tomaten", "Dose 400g", 1.0, "piece"),
+        ("2-3 Karotten", "Karotten", "", 2.5, "piece"),
+        ("1 Prise Zucker", "Zucker", "Prise", 1.0, "piece"),
+        ("1 Msp. Muskat", "Muskat", "Msp", 1.0, "piece"),
+        ("4 Scheiben Schinken", "Schinken", "Scheiben", 4.0, "piece"),
+        ("2 Zehen Knoblauch", "Knoblauch", "Zehen", 2.0, "piece"),
+        ("1 kg Kartoffeln", "Kartoffeln", "", 1.0, "kg"),
         # Ingredient names that happen to start like a number word or a unit
         # abbreviation must not be mangled.
-        ("Gurke", "Gurke", ""),
-        ("Gouda", "Gouda", ""),
-        ("Lauch", "Lauch", ""),
-        ("Limetten", "Limetten", ""),
-        ("Linsen", "Linsen", ""),
-        ("Eintopf-Gemüse", "Eintopf-Gemüse", ""),
-        ("Einlegegurken", "Einlegegurken", ""),
-        ("Glas Nutella", "Nutella", "Glas"),
+        ("Gurke", "Gurke", "", None, None),
+        ("Gouda", "Gouda", "", None, None),
+        ("Lauch", "Lauch", "", None, None),
+        ("Limetten", "Limetten", "", None, None),
+        ("Linsen", "Linsen", "", None, None),
+        ("Eintopf-Gemüse", "Eintopf-Gemüse", "", None, None),
+        ("Einlegegurken", "Einlegegurken", "", None, None),
+        # A unit word with no leading quantity at all isn't assumed to mean
+        # "1" - it stays purely descriptive.
+        ("Glas Nutella", "Nutella", "Glas", None, None),
         # A descriptive adjective/participle between quantity+unit and the
         # noun must be moved into the description, not left in the name -
         # otherwise it breaks matching against an existing pantry item.
-        ("500 g kleine Kartoffeln", "Kartoffeln", "500 g kleine"),
-        ("3-5 EL eiskaltes Wasser", "Wasser", "3-5 EL eiskaltes"),
-        ("1-2 EL gehackte Petersilie", "Petersilie", "1-2 EL gehackte"),
-        ("1 kleine Knoblauchzehe", "Knoblauchzehe", "1 kleine"),
+        ("500 g kleine Kartoffeln", "Kartoffeln", "kleine", 500.0, "g"),
+        ("3-5 EL eiskaltes Wasser", "Wasser", "EL eiskaltes", 4.0, "piece"),
+        ("1-2 EL gehackte Petersilie", "Petersilie", "EL gehackte", 1.5, "piece"),
+        ("1 kleine Knoblauchzehe", "Knoblauchzehe", "kleine", 1.0, "piece"),
     ],
 )
-def testParseGerman(ingredient, name, description):
+def testParseGerman(ingredient, name, description, amount, unit):
     [result] = parseGerman([ingredient])
     assert result.name == name
     assert result.description == description
+    assert result.amount == amount
+    assert result.unit == unit
 
 
 def testParseGermanPreservesOriginalText():
@@ -58,3 +63,26 @@ def testParseGermanPreservesOriginalText():
 def testParseGermanMultipleIngredients():
     results = parseGerman(["300g Reis", "2 Eier"])
     assert [r.name for r in results] == ["Reis", "Eier"]
+
+
+@pytest.mark.parametrize(
+    "ingredient,name,description,amount,unit",
+    [
+        ("300g rice", "rice", "", 300.0, "g"),
+        # A recognised pint unit with no mass/volume mapping of its own
+        # (a cup) is converted via real unit conversion, not string matching.
+        ("2 cups flour, sifted", "flour", "", 473.2, "ml"),
+        # A count-style unit with no metric equivalent - piece count, noun
+        # kept in the description so it isn't silently lost.
+        ("1 clove garlic, minced", "garlic", "clove", 1.0, "piece"),
+        ("2-3 onions", "onions", "", 2.5, "piece"),
+        ("250 ml milk", "milk", "", 250.0, "ml"),
+        ("2 large eggs", "eggs", "", 2.0, "piece"),
+    ],
+)
+def testParseNLP(ingredient, name, description, amount, unit):
+    [result] = parseNLP([ingredient])
+    assert result.name == name
+    assert result.description == description
+    assert result.amount == amount
+    assert result.unit == unit
