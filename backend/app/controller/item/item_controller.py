@@ -3,7 +3,8 @@ from flask import jsonify, Blueprint
 from app.errors import InvalidUsage, NotFoundRequest
 import app.util.description_splitter as description_splitter
 from flask_jwt_extended import jwt_required
-from app.models import Item, RecipeItems, Recipe, Category, ItemPrice, Store
+from app.models import Household, Item, RecipeItems, Recipe, Category, ItemPrice, Store
+from app.service import pricing
 from app.service.aldi_price_search import searchAldiArticles
 from app.service.dm_price_search import searchDmArticles
 from app.service.file_has_access_or_download import file_has_access_or_download
@@ -159,12 +160,19 @@ def deleteItemById(id):
 @validate_args(SearchByNameRequest)
 def searchItemByName(args, household_id):
     query, description = description_splitter.split(args["query"])
-    return jsonify(
-        [
-            e.obj_to_dict() | {"description": description}
-            for e in Item.search_name(query, household_id)
-        ]
-    )
+    household = Household.find_by_id(household_id)
+
+    results = []
+    for e in Item.search_name(query, household_id):
+        result = e.obj_to_dict() | {"description": description}
+        default = (
+            pricing.resolve_default_pack_size(e.id, household) if household else None
+        )
+        if default:
+            result["default_amount"], result["default_unit"] = default
+        results.append(result)
+
+    return jsonify(results)
 
 
 @itemHousehold.route("", methods=["POST"])

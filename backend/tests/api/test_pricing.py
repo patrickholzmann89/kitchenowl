@@ -86,6 +86,58 @@ def test_item_price_crud(user_client_with_household, household_id, item_id):
     assert response.get_json() == []
 
 
+def test_item_search_returns_default_pack_size_from_preferred_store(
+    user_client_with_household, household_id, item_id, item_name
+):
+    client = user_client_with_household
+    store_id = _create_store(client, household_id, "dm")
+    _set_preferred_store(client, household_id, store_id)
+
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={"store_id": store_id, "price": 2.5, "pack_amount": 250, "pack_unit": "ml"},
+    )
+    assert response.status_code == 200
+
+    response = client.get(
+        f"/api/household/{household_id}/item/search",
+        query_string={"query": item_name},
+    )
+    assert response.status_code == 200
+    match = next(r for r in response.get_json() if r["id"] == item_id)
+    assert match["default_amount"] == 250
+    assert match["default_unit"] == "ml"
+
+
+def test_item_search_omits_default_pack_size_when_ambiguous(
+    user_client_with_household, household_id, item_id, item_name
+):
+    client = user_client_with_household
+    aldi_id = _create_store(client, household_id, "Aldi")
+    dm_id = _create_store(client, household_id, "dm")
+    # No preferred store set, and the item is priced at two different
+    # stores - there's no single "the" pack size to default to.
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={"store_id": aldi_id, "price": 2.0, "pack_amount": 200, "pack_unit": "ml"},
+    )
+    assert response.status_code == 200
+    response = client.post(
+        f"/api/item/{item_id}/price",
+        json={"store_id": dm_id, "price": 2.5, "pack_amount": 250, "pack_unit": "ml"},
+    )
+    assert response.status_code == 200
+
+    response = client.get(
+        f"/api/household/{household_id}/item/search",
+        query_string={"query": item_name},
+    )
+    assert response.status_code == 200
+    match = next(r for r in response.get_json() if r["id"] == item_id)
+    assert "default_amount" not in match
+    assert "default_unit" not in match
+
+
 def test_sold_loose_price_is_proportional_not_rounded(
     user_client_with_household, household_id, item_id, item_name
 ):

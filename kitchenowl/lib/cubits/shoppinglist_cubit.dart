@@ -452,12 +452,22 @@ class ShoppinglistCubit extends Cubit<ShoppinglistCubitState> {
               query: queryName,
             ),
           )
-          .then((items) => items
-              .map((e) => ItemWithDescription.fromItem(
-                    item: e,
-                    description: queryDescription,
-                  ))
-              .toList());
+          .then((items) => items.map((e) {
+                // Nothing typed (no leading quantity, no comma-suffix) -
+                // default to the item's usual pack size, if known, so the
+                // user only has to adjust it when they want a different
+                // amount instead of typing it every time.
+                final description = queryDescription ??
+                    (e is ItemWithDescription ? e.description : '');
+                final noQuantityGiven = description.isEmpty;
+
+                return ItemWithDescription.fromItem(
+                  item: e,
+                  description: queryDescription,
+                  amount: noQuantityGiven ? e.defaultAmount : null,
+                  unit: noQuantityGiven ? e.defaultUnit : null,
+                );
+              }).toList());
 
       List<Item> loadedItems = await searchItems;
 

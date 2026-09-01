@@ -18,6 +18,11 @@ class Item extends Model {
   // against a piece-based pack price.
   final double? pieceWeight;
   final String? photo;
+  // The pack size this item is normally bought in (from the preferred
+  // store's price, or its only price), only present on search results -
+  // a hint for defaulting a shopping-list amount when none is given.
+  final double? defaultAmount;
+  final String? defaultUnit;
 
   const Item({
     this.id,
@@ -29,6 +34,8 @@ class Item extends Model {
     this.defaultKey,
     this.pieceWeight,
     this.photo,
+    this.defaultAmount,
+    this.defaultUnit,
   });
 
   factory Item.fromItem({
@@ -44,6 +51,8 @@ class Item extends Model {
         defaultKey: item.defaultKey,
         pieceWeight: item.pieceWeight,
         photo: item.photo,
+        defaultAmount: item.defaultAmount,
+        defaultUnit: item.defaultUnit,
       );
 
   factory Item.fromJson(Map<String, dynamic> map) => Item(
@@ -57,6 +66,8 @@ class Item extends Model {
             map['category'] != null ? Category.fromJson(map['category']) : null,
         pieceWeight: (map['piece_weight'] as num?)?.toDouble(),
         photo: map['photo'],
+        defaultAmount: (map['default_amount'] as num?)?.toDouble(),
+        defaultUnit: map['default_unit'],
       );
 
   Item copyWith({
@@ -74,6 +85,8 @@ class Item extends Model {
         ordering: ordering,
         pieceWeight: (pieceWeight ?? Nullable(this.pieceWeight)).value,
         photo: (photo ?? Nullable(this.photo)).value,
+        defaultAmount: defaultAmount,
+        defaultUnit: defaultUnit,
       );
 
   @override
@@ -87,6 +100,8 @@ class Item extends Model {
         category,
         pieceWeight,
         photo,
+        defaultAmount,
+        defaultUnit,
       ];
 
   @override
@@ -123,6 +138,8 @@ class ItemWithDescription extends Item {
     super.category,
     super.pieceWeight,
     super.photo,
+    super.defaultAmount,
+    super.defaultUnit,
     this.description = '',
     this.amount,
     this.unit,
@@ -142,11 +159,15 @@ class ItemWithDescription extends Item {
             map['category'] != null ? Category.fromJson(map['category']) : null,
         pieceWeight: (map['piece_weight'] as num?)?.toDouble(),
         photo: map['photo'],
+        defaultAmount: (map['default_amount'] as num?)?.toDouble(),
+        defaultUnit: map['default_unit'],
       );
 
   factory ItemWithDescription.fromItem({
     required Item item,
     String? description,
+    double? amount,
+    String? unit,
   }) =>
       ItemWithDescription(
         id: item.id,
@@ -158,10 +179,12 @@ class ItemWithDescription extends Item {
         defaultKey: item.defaultKey,
         pieceWeight: item.pieceWeight,
         photo: item.photo,
+        defaultAmount: item.defaultAmount,
+        defaultUnit: item.defaultUnit,
         description: description ??
             ((item is ItemWithDescription) ? item.description : ''),
-        amount: item is ItemWithDescription ? item.amount : null,
-        unit: item is ItemWithDescription ? item.unit : null,
+        amount: amount ?? (item is ItemWithDescription ? item.amount : null),
+        unit: unit ?? (item is ItemWithDescription ? item.unit : null),
       );
 
   @override
@@ -196,6 +219,8 @@ class ItemWithDescription extends Item {
         ordering: ordering,
         isDefault: isDefault,
         defaultKey: defaultKey,
+        defaultAmount: defaultAmount,
+        defaultUnit: defaultUnit,
       );
 
   @override

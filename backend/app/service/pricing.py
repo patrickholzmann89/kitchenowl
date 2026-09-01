@@ -2,7 +2,15 @@ import math
 from datetime import datetime
 from typing import Any
 
-from app.models import Item, ItemPrice, Planner, Recipe, Shoppinglist, ShoppinglistItems
+from app.models import (
+    Household,
+    Item,
+    ItemPrice,
+    Planner,
+    Recipe,
+    Shoppinglist,
+    ShoppinglistItems,
+)
 from app.util import units
 
 
@@ -80,6 +88,30 @@ def _resolve_price(
         return None
     _, price, bridged_base_amount, bridged_pack_amount = best
     return price, bridged_base_amount, bridged_pack_amount
+
+
+def resolve_default_pack_size(
+    item_id: int, household: Household
+) -> tuple[float, str] | None:
+    """The pack size to default a shopping-list amount to when none is
+    given: the preferred store's price for this item if it has one,
+    otherwise the item's only price if it's priced at exactly one store -
+    ambiguous (and thus skipped) if it's priced at several non-preferred
+    stores, since there's no clear "the" pack size to pick then."""
+    if not household.pricing_feature:
+        return None
+
+    price = None
+    if household.preferred_store_id:
+        price = ItemPrice.find_by_item_store(item_id, household.preferred_store_id)
+    if not price:
+        prices = ItemPrice.all_by_item(item_id)
+        if len(prices) == 1:
+            price = prices[0]
+    if not price:
+        return None
+
+    return price.pack_amount, price.pack_unit
 
 
 def compute_single_item_cost(
