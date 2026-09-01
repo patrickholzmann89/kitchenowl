@@ -84,17 +84,25 @@ class _SelectableButtonCardState extends State<SelectableButtonCard> {
                           height: constraint.maxWidth / 2.4,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image(
-                              image: widget.image!,
-                              fit: BoxFit.contain,
-                              gaplessPlayback: true,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(
-                                widget.icon ?? Icons.image_not_supported_rounded,
-                                size: constraint.maxWidth / 2.4,
-                                color: widget.selected
-                                    ? Theme.of(context).colorScheme.onPrimary
-                                    : null,
+                            // Isolates the image's own texture from the
+                            // clip/scroll-driven repaints of its ancestors -
+                            // a ClipRRect'd Image can otherwise render solid
+                            // black on Impeller (iOS's mandatory renderer
+                            // since Flutter 3.29, no Skia fallback anymore).
+                            child: RepaintBoundary(
+                              child: Image(
+                                image: widget.image!,
+                                fit: BoxFit.contain,
+                                gaplessPlayback: true,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(
+                                  widget.icon ??
+                                      Icons.image_not_supported_rounded,
+                                  size: constraint.maxWidth / 2.4,
+                                  color: widget.selected
+                                      ? Theme.of(context).colorScheme.onPrimary
+                                      : null,
+                                ),
                               ),
                             ),
                           ),

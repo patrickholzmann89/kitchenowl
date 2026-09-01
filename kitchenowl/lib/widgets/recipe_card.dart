@@ -93,15 +93,23 @@ class RecipeCard extends StatelessWidget {
                         borderRadius: const BorderRadius.vertical(
                           bottom: Radius.circular(14),
                         ),
-                        child: FadeInImage(
-                          fit: BoxFit.cover,
-                          placeholder: recipe.imageHash != null
-                              ? BlurHashImage(recipe.imageHash!)
-                              : MemoryImage(kTransparentImage) as ImageProvider,
-                          image: getImageProvider(
-                            context,
-                            recipe.image!,
-                            maxWidth: 512,
+                        // Isolates the image's own texture from the
+                        // clip/scroll-driven repaints of its ancestors - a
+                        // ClipRRect'd image can otherwise render solid black
+                        // on Impeller (iOS's mandatory renderer since Flutter
+                        // 3.29, no Skia fallback anymore).
+                        child: RepaintBoundary(
+                          child: FadeInImage(
+                            fit: BoxFit.cover,
+                            placeholder: recipe.imageHash != null
+                                ? BlurHashImage(recipe.imageHash!)
+                                : MemoryImage(kTransparentImage)
+                                    as ImageProvider,
+                            image: getImageProvider(
+                              context,
+                              recipe.image!,
+                              maxWidth: 512,
+                            ),
                           ),
                         ),
                       ),

@@ -61,14 +61,16 @@ class _SelectableButtonListTileState extends State<SelectableButtonListTile> {
         leading: widget.selected
             ? const Icon(Icons.check_rounded)
             : (widget.image != null && !_imageFailed)
-                ? CircleAvatar(
-                    backgroundImage: widget.image,
-                    backgroundColor: Colors.transparent,
-                    onBackgroundImageError: (error, stackTrace) {
-                      if (mounted) {
-                        setState(() => _imageFailed = true);
-                      }
-                    },
+                ? RepaintBoundary(
+                    child: CircleAvatar(
+                      backgroundImage: widget.image,
+                      backgroundColor: Colors.transparent,
+                      onBackgroundImageError: (error, stackTrace) {
+                        if (mounted) {
+                          setState(() => _imageFailed = true);
+                        }
+                      },
+                    ),
                   )
                 : widget.icon != null
                     ? Icon(widget.icon,
