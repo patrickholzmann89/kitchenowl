@@ -219,11 +219,17 @@ class _AppState extends State<App> with WidgetsBindingObserver {
                   ),
                   onGenerateTitle: (BuildContext context) =>
                       AppLocalizations.of(context)!.appTitle,
-                  localizationsDelegates:
+                  // material_ui's own MaterialLocalizations defaults to an
+                  // English-only delegate unless GlobalMaterialLocalizations
+                  // (material_ui's multi-language one, not flutter_localizations')
+                  // is listed explicitly - without it, any material_ui widget
+                  // needing MaterialLocalizations (e.g. TextField) null-checks
+                  // and crashes for every non-English locale.
+                  localizationsDelegates: GlobalMaterialLocalizations.delegates +
                       AppLocalizations.localizationsDelegates +
-                          [
-                            LocaleNamesLocalizationsDelegate(),
-                          ],
+                      [
+                        LocaleNamesLocalizationsDelegate(),
+                      ],
                   supportedLocales:
                       const [Locale('en')] + AppLocalizations.supportedLocales,
                   theme: AppThemes.light(lightColorScheme),
