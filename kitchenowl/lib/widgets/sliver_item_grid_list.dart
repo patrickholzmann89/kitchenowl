@@ -24,6 +24,8 @@ class SliverItemGridList<T extends Item> extends StatelessWidget {
   final bool isLoading;
   final Widget Function(T)? extraOption;
   final ShoppingListStyle shoppingListStyle;
+  // Pre-formatted currency strings, keyed by item id.
+  final Map<int, String> priceLabels;
 
   const SliverItemGridList({
     super.key,
@@ -37,6 +39,7 @@ class SliverItemGridList<T extends Item> extends StatelessWidget {
     this.isLoading = false,
     this.extraOption,
     this.shoppingListStyle = const ShoppingListStyle(),
+    this.priceLabels = const {},
   });
 
   @override
@@ -67,6 +70,7 @@ class SliverItemGridList<T extends Item> extends StatelessWidget {
                   (onLongPressed ?? Nullable((item) => openMenu(context, item)))
                       .value,
               extraOption: extraOption?.call(items[i]),
+              priceText: priceLabels[items[i].id],
             ),
     );
 

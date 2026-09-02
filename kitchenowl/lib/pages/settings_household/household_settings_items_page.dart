@@ -139,12 +139,16 @@ class _HouseholdSettingsItemsPageState
                       padding: const EdgeInsets.only(right: 16, bottom: 6),
                       child: TrailingIconTextButton(
                         onPressed: cubit.incrementSorting,
-                        text: state.sorting == ShoppinglistSorting.alphabetical
-                            ? AppLocalizations.of(context)!.sortingAlphabetical
-                            : state.sorting == ShoppinglistSorting.algorithmic
-                                ? AppLocalizations.of(context)!
-                                    .sortingAlgorithmic
-                                : AppLocalizations.of(context)!.category,
+                        text: switch (state.sorting) {
+                          ShoppinglistSorting.alphabetical =>
+                            AppLocalizations.of(context)!.sortingAlphabetical,
+                          ShoppinglistSorting.algorithmic =>
+                            AppLocalizations.of(context)!.sortingAlgorithmic,
+                          ShoppinglistSorting.category =>
+                            AppLocalizations.of(context)!.category,
+                          ShoppinglistSorting.store =>
+                            AppLocalizations.of(context)!.sortingStore,
+                        },
                         icon: const Icon(Icons.sort),
                       ),
                     ),

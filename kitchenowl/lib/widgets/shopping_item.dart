@@ -31,6 +31,8 @@ class ShoppingItemWidget<T extends Item> extends StatelessWidget {
   final void Function(T)? onLongPressed;
   final bool selected;
   final Widget? extraOption;
+  // Pre-formatted currency string for this item's resolved price, if any.
+  final String? priceText;
 
   /// Only applicable if gridStyle = false, raises the list items and makes them fully opaque.
   /// defaults to true for item is ShoppinglistItem || item is RecipeItem && selected
@@ -50,6 +52,7 @@ class ShoppingItemWidget<T extends Item> extends StatelessWidget {
     this.raised,
     this.extraOption,
     this.showPhoto = false,
+    this.priceText,
   });
 
   @override
@@ -57,9 +60,13 @@ class ShoppingItemWidget<T extends Item> extends StatelessWidget {
     final image = (showPhoto && item.photo != null)
         ? getImageProvider(context, item.photo!)
         : null;
-    final description = (item is ItemWithDescription)
+    final itemDescription = (item is ItemWithDescription)
         ? _formatItemDescription(item as ItemWithDescription)
         : null;
+    final description = [itemDescription, priceText]
+        .nonNulls
+        .where((s) => s.isNotEmpty)
+        .join(' · ');
 
     return gridStyle
         ? SelectableButtonCard(

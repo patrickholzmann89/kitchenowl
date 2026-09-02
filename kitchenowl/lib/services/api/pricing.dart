@@ -30,6 +30,30 @@ class StoreCostEstimate {
       );
 }
 
+// Per-item pricing breakdown of a shopping-list cost estimate: which store
+// the item was priced at (the household's preferred store, or whichever
+// other store had the cheapest per-unit price) and the resulting cost.
+class ItemCostLine {
+  final double total;
+  final double unitPrice;
+  final int storeId;
+  final String storeName;
+
+  const ItemCostLine({
+    required this.total,
+    required this.unitPrice,
+    required this.storeId,
+    required this.storeName,
+  });
+
+  factory ItemCostLine.fromJson(Map<String, dynamic> map) => ItemCostLine(
+        total: (map['total'] as num).toDouble(),
+        unitPrice: (map['unit_price'] as num).toDouble(),
+        storeId: map['store_id'],
+        storeName: map['store_name'],
+      );
+}
+
 class CostEstimate {
   final double? total;
   // Proportional cost of exactly the amount needed, ignoring pack rounding.
@@ -42,6 +66,9 @@ class CostEstimate {
   // than the household's preferred one) - only populated for shopping-list
   // cost estimates, sorted by total descending.
   final List<StoreCostEstimate> byStore;
+  // Per-item breakdown, keyed by item id - only populated for shopping-list
+  // cost estimates.
+  final Map<int, ItemCostLine> lines;
 
   const CostEstimate({
     this.total,
@@ -50,6 +77,7 @@ class CostEstimate {
     this.pricedItems = 0,
     this.totalItems = 0,
     this.byStore = const [],
+    this.lines = const {},
   });
 
   factory CostEstimate.fromJson(Map<String, dynamic> map) => CostEstimate(
@@ -65,6 +93,14 @@ class CostEstimate {
                 ),
               )
             : const [],
+        lines: map['lines'] != null
+            ? (map['lines'] as Map<String, dynamic>).map(
+                (key, value) => MapEntry(
+                  int.parse(key),
+                  ItemCostLine.fromJson(value),
+                ),
+              )
+            : const {},
       );
 
   static const CostEstimate unavailable = CostEstimate();

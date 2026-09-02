@@ -140,14 +140,18 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
                         ),
                         TrailingIconTextButton(
                           onPressed: cubit.incrementSorting,
-                          text: state.sorting ==
-                                  ShoppinglistSorting.alphabetical
-                              ? AppLocalizations.of(context)!.sortingAlphabetical
-                              : state.sorting ==
-                                      ShoppinglistSorting.algorithmic
-                                  ? AppLocalizations.of(context)!
-                                      .sortingAlgorithmic
-                                  : AppLocalizations.of(context)!.category,
+                          text: switch (state.sorting) {
+                            ShoppinglistSorting.alphabetical =>
+                              AppLocalizations.of(context)!
+                                  .sortingAlphabetical,
+                            ShoppinglistSorting.algorithmic =>
+                              AppLocalizations.of(context)!
+                                  .sortingAlgorithmic,
+                            ShoppinglistSorting.category =>
+                              AppLocalizations.of(context)!.category,
+                            ShoppinglistSorting.store =>
+                              AppLocalizations.of(context)!.sortingStore,
+                          },
                           icon: const Icon(Icons.sort),
                         ),
                       ],
@@ -298,6 +302,12 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
                                       }),
                                       onRecentPressed: Nullable(cubit.add),
                                       onRefresh: cubit.refresh,
+                                      costEstimate: state.costEstimate,
+                                      locale: BlocProvider.of<HouseholdCubit>(
+                                              context)
+                                          .state
+                                          .household
+                                          .language,
                                     ),
                                   ],
                                 ),

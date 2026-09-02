@@ -33,9 +33,17 @@ class HouseholdSettingsItemsCubit extends Cubit<HouseholdSettingsItemsState> {
     }
   }
 
+  // "store" grouping needs a cost estimate to resolve which store an item
+  // belongs to, which this catalog view (unlike the shopping list) has none
+  // of - skip it, it would otherwise behave just like alphabetical here.
   void incrementSorting() {
-    setSorting(ShoppinglistSorting
-        .values[(state.sorting.index + 1) % ShoppinglistSorting.values.length]);
+    int index = state.sorting.index;
+    ShoppinglistSorting next;
+    do {
+      index = (index + 1) % ShoppinglistSorting.values.length;
+      next = ShoppinglistSorting.values[index];
+    } while (next == ShoppinglistSorting.store);
+    setSorting(next);
   }
 
   void setSorting(ShoppinglistSorting sorting) {

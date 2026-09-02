@@ -3,7 +3,8 @@ import 'package:kitchenowl/models/item.dart';
 enum ShoppinglistSorting {
   alphabetical,
   algorithmic,
-  category;
+  category,
+  store;
 
   static void sortShoppinglistItems(
     List<Item> shoppinglist,
@@ -13,6 +14,7 @@ enum ShoppinglistSorting {
     switch (sorting) {
       case ShoppinglistSorting.alphabetical:
       case ShoppinglistSorting.category:
+      case ShoppinglistSorting.store:
         shoppinglist.sort(
             (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
         break;

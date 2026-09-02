@@ -22,6 +22,8 @@ class SliverCategoryItemGridList<T extends Item> extends StatefulWidget {
   final bool isSubTitle;
   final bool splitByCategories;
   final ShoppingListStyle shoppingListStyle;
+  // Pre-formatted currency strings, keyed by item id.
+  final Map<int, String> priceLabels;
 
   const SliverCategoryItemGridList({
     super.key,
@@ -38,6 +40,7 @@ class SliverCategoryItemGridList<T extends Item> extends StatefulWidget {
     this.isSubTitle = false,
     this.splitByCategories = false,
     this.shoppingListStyle = const ShoppingListStyle(),
+    this.priceLabels = const {},
   });
 
   @override
@@ -76,6 +79,7 @@ class _SliverCategoryItemGridListState<T extends Item>
           isSubTitle: true,
           extraOption: widget.extraOption,
           shoppingListStyle: widget.shoppingListStyle,
+          priceLabels: widget.priceLabels,
         ));
       }
     } else
@@ -90,6 +94,7 @@ class _SliverCategoryItemGridListState<T extends Item>
         isLoading: widget.isLoading,
         extraOption: widget.extraOption,
         shoppingListStyle: widget.shoppingListStyle,
+        priceLabels: widget.priceLabels,
       ));
 
     return SliverExpansionTile(
