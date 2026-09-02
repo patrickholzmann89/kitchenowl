@@ -4,6 +4,8 @@ import 'package:kitchenowl/cubits/household_add_update/household_update_cubit.da
 import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/store.dart';
 import 'package:kitchenowl/widgets/dismissible_card.dart';
+import 'package:kitchenowl/widgets/store_circle_avatar.dart';
+import 'package:kitchenowl/widgets/store_edit_dialog.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 class HouseholdSettingsStorePage extends StatelessWidget {
@@ -21,20 +23,18 @@ class HouseholdSettingsStorePage extends StatelessWidget {
                 icon: const Icon(Icons.add),
                 tooltip: AppLocalizations.of(context)!.storeAdd,
                 onPressed: () async {
-                  final res = await showDialog<String>(
+                  final res = await showDialog<StoreEditResult>(
                     context: context,
                     builder: (BuildContext context) {
-                      return TextDialog(
+                      return StoreEditDialog(
                         title: AppLocalizations.of(context)!.storeAdd,
                         doneText: AppLocalizations.of(context)!.add,
-                        hintText: AppLocalizations.of(context)!.name,
-                        isInputValid: (s) => s.trim().isNotEmpty,
                       );
                     },
                   );
-                  if (res != null) {
+                  if (res != null && context.mounted) {
                     BlocProvider.of<HouseholdUpdateCubit>(context)
-                        .addStore(res);
+                        .addStore(res.name, res.photo);
                   }
                 },
               ),
@@ -75,26 +75,27 @@ class HouseholdSettingsStorePage extends StatelessWidget {
                         BlocProvider.of<HouseholdUpdateCubit>(context)
                             .deleteStore(state.stores.elementAt(i));
                       },
+                      leading: StoreCircleAvatar(
+                        store: state.stores.elementAt(i),
+                      ),
                       title: Text(state.stores.elementAt(i).name),
                       onTap: () async {
-                        final res = await showDialog<String>(
+                        final store = state.stores.elementAt(i);
+                        final res = await showDialog<StoreEditResult>(
                           context: context,
                           builder: (BuildContext context) {
-                            return TextDialog(
+                            return StoreEditDialog(
                               title: AppLocalizations.of(context)!.rename,
                               doneText: AppLocalizations.of(context)!.rename,
-                              hintText: AppLocalizations.of(context)!.name,
-                              initialText: state.stores.elementAt(i).name,
-                              isInputValid: (s) =>
-                                  s.trim().isNotEmpty &&
-                                  s != state.stores.elementAt(i).name,
+                              initialName: store.name,
+                              initialPhoto: store.photo,
                             );
                           },
                         );
-                        if (res != null) {
+                        if (res != null && context.mounted) {
                           BlocProvider.of<HouseholdUpdateCubit>(context)
                               .updateStore(
-                            state.stores.elementAt(i).copyWith(name: res),
+                            store.copyWith(name: res.name, photo: res.photo),
                           );
                         }
                       },

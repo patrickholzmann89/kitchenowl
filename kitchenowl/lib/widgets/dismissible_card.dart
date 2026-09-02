@@ -5,6 +5,7 @@ class DismissibleCard extends StatelessWidget {
   final void Function(DismissDirection)? onDismissed;
   final void Function()? onTap;
   final bool isDismissable;
+  final Widget? leading;
   final Widget title;
   final Widget? subtitle;
   final Widget? trailing;
@@ -15,6 +16,7 @@ class DismissibleCard extends StatelessWidget {
     this.confirmDismiss,
     this.onDismissed,
     this.onTap,
+    this.leading,
     required this.title,
     this.subtitle,
     this.trailing,
@@ -28,6 +30,7 @@ class DismissibleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget widget = Card(
       child: ListTile(
+        leading: leading,
         title: title,
         onTap: onTap,
         subtitle: subtitle,

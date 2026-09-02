@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped
 
 Model = db.Model
 if TYPE_CHECKING:
-    from app.models import Household, Item
+    from app.models import Household, Item, File
     from app.helpers.db_model_base import DbModelBase
 
     Model = DbModelBase
@@ -17,6 +17,7 @@ class Store(Model, DbModelAuthorizeMixin):
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     name: Mapped[str] = db.Column(db.String(128))
+    photo: Mapped[str | None] = db.Column(db.String(), db.ForeignKey("file.filename"))
     household_id: Mapped[int] = db.Column(
         db.Integer, db.ForeignKey("household.id"), nullable=False, index=True
     )
@@ -29,6 +30,15 @@ class Store(Model, DbModelAuthorizeMixin):
             foreign_keys=[household_id],
         ),
     )
+    photo_file: Mapped["File"] = cast(
+        Mapped["File"],
+        db.relationship(
+            "File",
+            back_populates="store",
+            uselist=False,
+            lazy="selectin",
+        ),
+    )
     prices: Mapped[List["ItemPrice"]] = cast(
         Mapped[List["ItemPrice"]],
         db.relationship(
@@ -37,6 +47,16 @@ class Store(Model, DbModelAuthorizeMixin):
             cascade="all, delete-orphan",
         ),
     )
+
+    def obj_to_dict(
+        self,
+        skip_columns: list[str] | None = None,
+        include_columns: list[str] | None = None,
+    ) -> dict[str, Any]:
+        res = super().obj_to_dict(skip_columns, include_columns)
+        if self.photo_file:
+            res["photo_hash"] = self.photo_file.blur_hash
+        return res
 
     @classmethod
     def find_by_name(cls, household_id: int, name: str) -> Self | None:

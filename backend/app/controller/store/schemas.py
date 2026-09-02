@@ -6,6 +6,7 @@ class AddStore(Schema):
         unknown = EXCLUDE
 
     name = fields.String(required=True, validate=lambda a: a and not a.isspace())
+    photo = fields.String(allow_none=True)
 
 
 class UpdateStore(Schema):
@@ -13,3 +14,4 @@ class UpdateStore(Schema):
         unknown = EXCLUDE
 
     name = fields.String(validate=lambda a: a and not a.isspace())
+    photo = fields.String(allow_none=True)

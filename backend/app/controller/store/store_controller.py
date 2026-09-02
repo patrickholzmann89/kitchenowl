@@ -5,6 +5,7 @@ from app.errors import NotFoundRequest, InvalidUsage
 from flask_jwt_extended import jwt_required
 from app.jobs.price_refresh_job import start_price_refresh
 from app.models import Store, Household
+from app.service.file_has_access_or_download import file_has_access_or_download
 from .schemas import AddStore, UpdateStore
 
 store = Blueprint("store", __name__)
@@ -40,6 +41,8 @@ def addStore(args, household_id):
     store = Store()
     store.name = args["name"]
     store.household_id = household_id
+    if "photo" in args and args["photo"] != store.photo:
+        store.photo = file_has_access_or_download(args["photo"], store.photo)
     store.save()
     return jsonify(store.obj_to_dict())
 
@@ -55,6 +58,8 @@ def updateStore(args, id):
 
     if "name" in args:
         store.name = args["name"]
+    if "photo" in args and args["photo"] != store.photo:
+        store.photo = file_has_access_or_download(args["photo"], store.photo)
     store.save()
 
     return jsonify(store.obj_to_dict())

@@ -303,6 +303,7 @@ class _ShoppinglistPageState extends State<ShoppinglistPage> {
                                       onRecentPressed: Nullable(cubit.add),
                                       onRefresh: cubit.refresh,
                                       costEstimate: state.costEstimate,
+                                      stores: state.stores,
                                       locale: BlocProvider.of<HouseholdCubit>(
                                               context)
                                           .state

@@ -8,6 +8,7 @@ import 'package:sliver_tools/sliver_tools.dart';
 
 class SliverCategoryItemGridList<T extends Item> extends StatefulWidget {
   final String name;
+  final Widget? leading;
 
   // SliverItemGridList
   final void Function()? onRefresh;
@@ -28,6 +29,7 @@ class SliverCategoryItemGridList<T extends Item> extends StatefulWidget {
   const SliverCategoryItemGridList({
     super.key,
     required this.name,
+    this.leading,
     this.onRefresh,
     this.onPressed,
     this.onLongPressed,
@@ -100,9 +102,20 @@ class _SliverCategoryItemGridListState<T extends Item>
     return SliverExpansionTile(
       title: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Text(
-          widget.name,
-          style: titleTextStyle,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.leading != null) ...[
+              widget.leading!,
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(
+                widget.name,
+                style: titleTextStyle,
+              ),
+            ),
+          ],
         ),
       ),
       sliver: MultiSliver(children: list),

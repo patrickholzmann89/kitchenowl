@@ -6,8 +6,10 @@ import 'package:kitchenowl/kitchenowl.dart';
 import 'package:kitchenowl/models/category.dart';
 import 'package:kitchenowl/models/item.dart';
 import 'package:kitchenowl/models/shoppinglist.dart';
+import 'package:kitchenowl/models/store.dart';
 import 'package:kitchenowl/services/api/pricing.dart';
 import 'package:kitchenowl/widgets/home_page/sliver_category_item_grid_list.dart';
+import 'package:kitchenowl/widgets/store_circle_avatar.dart';
 
 class SliverShopinglistItemView extends StatelessWidget {
   final ShoppingList? shoppingList;
@@ -20,6 +22,7 @@ class SliverShopinglistItemView extends StatelessWidget {
   final List<ShoppinglistItem> selectedListItems;
   final ShoppingListStyle shoppingListStyle;
   final CostEstimate costEstimate;
+  final List<Store> stores;
   final String? locale;
 
   const SliverShopinglistItemView({
@@ -34,6 +37,7 @@ class SliverShopinglistItemView extends StatelessWidget {
     required this.selectedListItems,
     this.shoppingListStyle = const ShoppingListStyle(),
     this.costEstimate = CostEstimate.unavailable,
+    this.stores = const [],
     this.locale,
   });
 
@@ -85,6 +89,10 @@ class SliverShopinglistItemView extends StatelessWidget {
       final storeNames = <int, String>{
         for (final line in costEstimate.lines.values) line.storeId: line.storeName,
       };
+      final storesById = <int, Store>{
+        for (final store in stores)
+          if (store.id != null) store.id!: store,
+      };
       final storeIds = storeNames.keys.toList()
         ..sort((a, b) =>
             storeNames[a]!.toLowerCase().compareTo(storeNames[b]!.toLowerCase()));
@@ -97,8 +105,12 @@ class SliverShopinglistItemView extends StatelessWidget {
             [];
         if (items.isEmpty) continue;
 
+        final store = storesById[storeId];
         grids.add(SliverCategoryItemGridList<ShoppinglistItem>(
           name: storeNames[storeId]!,
+          leading: store != null && (store.photo?.isNotEmpty ?? false)
+              ? StoreCircleAvatar(store: store, radius: 12)
+              : null,
           items: items,
           categories: categories,
           shoppingList: shoppingList,

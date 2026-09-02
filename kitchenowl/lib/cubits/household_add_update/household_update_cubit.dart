@@ -174,9 +174,11 @@ class HouseholdUpdateCubit
     return ApiService.getInstance().refreshPrices(household);
   }
 
-  Future<bool> addStore(String name) async {
-    final res =
-        await ApiService.getInstance().addStore(household, Store(name: name));
+  Future<bool> addStore(String name, [String? photo]) async {
+    final res = await ApiService.getInstance().addStore(
+      household,
+      Store(name: name, photo: photo),
+    );
     refresh();
 
     return res;
