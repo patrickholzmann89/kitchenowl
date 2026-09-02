@@ -57,8 +57,22 @@ class ShoppingItemWidget<T extends Item> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tiles only ever render this at ~40-100 logical px (grid thumbnail or
+    // list avatar) - decoding it at its original resolution wastes a lot of
+    // GPU texture memory across a scrolling grid full of tiles, which makes
+    // it far more likely to hit Impeller's texture-lifecycle bugs (iOS
+    // images turning black) as tiles are recycled while scrolling or the
+    // photo/icon display mode is toggled. Capping the decode size keeps
+    // memory pressure low regardless of the source photo's actual size.
+    final cacheDimension =
+        (200 * MediaQuery.of(context).devicePixelRatio).round();
     final image = (showPhoto && item.photo != null)
-        ? getImageProvider(context, item.photo!)
+        ? getImageProvider(
+            context,
+            item.photo!,
+            maxWidth: cacheDimension,
+            maxHeight: cacheDimension,
+          )
         : null;
     final itemDescription = (item is ItemWithDescription)
         ? _formatItemDescription(item as ItemWithDescription)

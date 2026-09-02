@@ -20,27 +20,33 @@ class UserImageSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      backgroundImage: hasDominantImage() ? getDominantImage(context)! : null,
-      radius: 45,
-      child: IconButton(
-        icon: hasDominantImage()
-            ? const Icon(Icons.edit)
-            : const Icon(Icons.add_photo_alternate_rounded),
-        tooltip: tooltip ?? AppLocalizations.of(context)!.imageSelect,
-        color: hasDominantImage()
-            ? Theme.of(context).colorScheme.secondary
-            : Theme.of(context).colorScheme.onSecondary,
-        onPressed: () async {
-          NamedByteArray? file = await selectFile(
-            context: context,
-            title: tooltip ?? AppLocalizations.of(context)!.imageSelect,
-            deleteOption: hasDominantImage(),
-          );
-          if (file != null) {
-            setImage(file);
-          }
-        },
+    // Isolates the avatar's own texture from this page's repaints - a
+    // clipped image can otherwise render solid black on Impeller (iOS's
+    // mandatory renderer since Flutter 3.29, no Skia fallback anymore).
+    return RepaintBoundary(
+      child: CircleAvatar(
+        backgroundImage:
+            hasDominantImage() ? getDominantImage(context)! : null,
+        radius: 45,
+        child: IconButton(
+          icon: hasDominantImage()
+              ? const Icon(Icons.edit)
+              : const Icon(Icons.add_photo_alternate_rounded),
+          tooltip: tooltip ?? AppLocalizations.of(context)!.imageSelect,
+          color: hasDominantImage()
+              ? Theme.of(context).colorScheme.secondary
+              : Theme.of(context).colorScheme.onSecondary,
+          onPressed: () async {
+            NamedByteArray? file = await selectFile(
+              context: context,
+              title: tooltip ?? AppLocalizations.of(context)!.imageSelect,
+              deleteOption: hasDominantImage(),
+            );
+            if (file != null) {
+              setImage(file);
+            }
+          },
+        ),
       ),
     );
   }
