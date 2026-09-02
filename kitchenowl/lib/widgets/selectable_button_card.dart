@@ -132,7 +132,7 @@ class _SelectableButtonCardState extends State<SelectableButtonCard> {
                             ? Theme.of(context).colorScheme.onPrimary
                             : null,
                       ),
-                      maxLines: widget.icon != null ? 2 : 3,
+                      maxLines: widget.icon != null || widget.image != null ? 2 : 3,
                       overflow: TextOverflow.ellipsis,
                       softWrap: true,
                       textAlign: TextAlign.center,
