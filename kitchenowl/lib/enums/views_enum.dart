@@ -44,11 +44,16 @@ enum ViewsEnum {
     if (this == ViewsEnum.more) {
       Household? household = context.read<HouseholdCubit>().state.household;
       if (!App.isOffline && household.image != null)
-        return CircleAvatar(
-          radius: 16,
-          foregroundImage: getImageProvider(
-            context,
-            household.image!,
+        // Isolates the avatar's own texture from tab-switch repaints - a
+        // clipped image can otherwise render solid black on Impeller (iOS's
+        // mandatory renderer since Flutter 3.29, no Skia fallback anymore).
+        return RepaintBoundary(
+          child: CircleAvatar(
+            radius: 16,
+            foregroundImage: getImageProvider(
+              context,
+              household.image!,
+            ),
           ),
         );
     }

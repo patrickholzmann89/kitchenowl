@@ -76,15 +76,23 @@ class FlexibleImageSpaceBar extends StatelessWidget {
                   ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
                 },
                 blendMode: BlendMode.dstIn,
-                child: FadeInImage(
-                  placeholder: imageHash != null
-                      ? BlurHashImage(imageHash!)
-                      : MemoryImage(kTransparentImage) as ImageProvider,
-                  image: getImageProvider(
-                    context,
-                    imageUrl,
+                // Isolates the image's own texture from the shader/scroll-
+                // driven repaints of this flexible space bar - a masked
+                // image can otherwise render solid black on Impeller (iOS's
+                // mandatory renderer since Flutter 3.29, no Skia fallback
+                // anymore), which is especially likely here since the header
+                // repaints continuously while scrolling/collapsing.
+                child: RepaintBoundary(
+                  child: FadeInImage(
+                    placeholder: imageHash != null
+                        ? BlurHashImage(imageHash!)
+                        : MemoryImage(kTransparentImage) as ImageProvider,
+                    image: getImageProvider(
+                      context,
+                      imageUrl,
+                    ),
+                    fit: BoxFit.cover,
                   ),
-                  fit: BoxFit.cover,
                 ),
               ),
             )

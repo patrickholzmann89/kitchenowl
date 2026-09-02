@@ -186,7 +186,15 @@ class _RecipeCookingPageState extends State<RecipeCookingPage> {
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(16),
-                                      child: child,
+                                      // Isolates the image's own texture from
+                                      // the clip/animation-driven repaints of
+                                      // its ancestors (this page transitions
+                                      // between steps) - a ClipRRect'd image
+                                      // can otherwise render solid black on
+                                      // Impeller (iOS's mandatory renderer
+                                      // since Flutter 3.29, no Skia fallback
+                                      // anymore).
+                                      child: RepaintBoundary(child: child),
                                     ),
                                   ),
                                   image: getImageProvider(

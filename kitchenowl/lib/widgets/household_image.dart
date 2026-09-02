@@ -27,14 +27,20 @@ class HouseholdImage extends StatelessWidget {
           fit: StackFit.loose,
           children: [
             SizedBox.expand(
-              child: FadeInImage(
-                fit: BoxFit.cover,
-                placeholder: household.imageHash != null
-                    ? BlurHashImage(household.imageHash!)
-                    : MemoryImage(kTransparentImage) as ImageProvider,
-                image: getImageProvider(
-                  context,
-                  household.image!,
+              // Isolates the image's own texture from the clip/scroll-driven
+              // repaints of its ancestors - a ClipRRect'd image can otherwise
+              // render solid black on Impeller (iOS's mandatory renderer
+              // since Flutter 3.29, no Skia fallback anymore).
+              child: RepaintBoundary(
+                child: FadeInImage(
+                  fit: BoxFit.cover,
+                  placeholder: household.imageHash != null
+                      ? BlurHashImage(household.imageHash!)
+                      : MemoryImage(kTransparentImage) as ImageProvider,
+                  image: getImageProvider(
+                    context,
+                    household.image!,
+                  ),
                 ),
               ),
             ),

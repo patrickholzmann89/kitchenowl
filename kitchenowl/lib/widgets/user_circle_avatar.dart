@@ -16,20 +16,26 @@ class UserCircleAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      foregroundImage: user.image?.isEmpty ?? true
-          ? null
-          : getImageProvider(
-              context,
-              user.image!,
-            ),
-      child: user.name.isNotEmpty
-          ? Text(
-              user.name.substring(0, 1),
-              textScaler: textScaler,
-            )
-          : null,
-      radius: radius,
+    // Isolates the avatar's own texture from the scroll-driven repaints of
+    // its ancestors (e.g. a member list) - a clipped image can otherwise
+    // render solid black on Impeller (iOS's mandatory renderer since Flutter
+    // 3.29, no Skia fallback anymore).
+    return RepaintBoundary(
+      child: CircleAvatar(
+        foregroundImage: user.image?.isEmpty ?? true
+            ? null
+            : getImageProvider(
+                context,
+                user.image!,
+              ),
+        child: user.name.isNotEmpty
+            ? Text(
+                user.name.substring(0, 1),
+                textScaler: textScaler,
+              )
+            : null,
+        radius: radius,
+      ),
     );
   }
 }

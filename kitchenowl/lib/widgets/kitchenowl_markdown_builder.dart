@@ -192,12 +192,19 @@ class _KitchenOwlMarkdownBuilderState extends State<KitchenOwlMarkdownBuilder>
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: CachedNetworkImage(
-                    imageUrl: uri.toString(),
-                    placeholder: (context, url) =>
-                        const Center(child: CircularProgressIndicator()),
-                    errorWidget: (context, url, error) =>
-                        const Icon(Icons.error),
+                  // Isolates the image's own texture from the clip/scroll-
+                  // driven repaints of its ancestors - a ClipRRect'd image
+                  // can otherwise render solid black on Impeller (iOS's
+                  // mandatory renderer since Flutter 3.29, no Skia fallback
+                  // anymore).
+                  child: RepaintBoundary(
+                    child: CachedNetworkImage(
+                      imageUrl: uri.toString(),
+                      placeholder: (context, url) =>
+                          const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
+                    ),
                   ),
                 ),
               ),
